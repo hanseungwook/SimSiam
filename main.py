@@ -85,7 +85,7 @@ def main(device, args):
             logger.update_scalers(data_dict)
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:
-            backbone = model.module.backbone_s if args.model == 'simsiam_kd' else model.module.backbone
+            backbone = model.module.backbone_s if args.model.name == 'simsiam_kd' else model.module.backbone
             accuracy = knn_monitor(backbone, memory_loader, test_loader, device, k=min(args.train.knn_k, len(memory_loader.dataset)), hide_progress=args.hide_progress) 
         
         epoch_dict = {"epoch":epoch, "accuracy":accuracy}
