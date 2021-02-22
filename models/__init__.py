@@ -1,4 +1,4 @@
-from .simsiam import SimSiam
+from .simsiam import SimSiam, SimSiamKD
 from .byol import BYOL
 from .simclr import SimCLR
 from torchvision.models import resnet50, resnet18
