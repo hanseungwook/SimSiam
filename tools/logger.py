@@ -26,7 +26,7 @@ class Logger(object):
 
         for key, value in ordered_dict.items():
             if isinstance(value, Tensor):
-                ordered_dict[key] = value.item()
+                ordered_dict[key] = value.mean().item()
             if self.counter.get(key) is None:
                 self.counter[key] = 1
             else:
