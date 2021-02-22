@@ -16,7 +16,7 @@
 
 ## User python environment
 HOME2=/nobackup/users/$(whoami)
-PYTHON_VIRTUAL_ENVIRONMENT=wmlce-ea
+PYTHON_VIRTUAL_ENVIRONMENT=pytorch1.7
 CONDA_ROOT=$HOME2/anaconda3
 
 ## Activate WMLCE virtual environment 
