@@ -33,7 +33,7 @@ class Logger(object):
                 self.counter[key] += 1
 
             if self.writer:
-                self.writer.add_scalar(key, value.mean(), self.counter[key])
+                self.writer.add_scalar(key, value.mean() if isinstance(value, Tensor) else value, self.counter[key])
 
 
         if self.plotter: 
