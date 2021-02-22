@@ -112,7 +112,7 @@ class SimSiamKD(nn.Module):
         super().__init__()
         
         self.backbone_s, self.backbone_t = backbones
-        self.projector = projection_MLP(backbone_s.output_dim)
+        self.projector = projection_MLP(self.backbone_s.output_dim)
 
         # Student encoder
         self.encoder_s = nn.Sequential( # f encoder
