@@ -5,7 +5,7 @@ from .simclr_aug import SimCLRTransform
 def get_aug(name='simsiam', image_size=224, train=True, train_classifier=None):
 
     if train==True:
-        if name == 'simsiam':
+        if name == 'simsiam' or name == 'simsiam_kd':
             augmentation = SimSiamTransform(image_size)
         elif name == 'byol':
             augmentation = BYOL_transform(image_size)

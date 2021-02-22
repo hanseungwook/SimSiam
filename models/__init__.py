@@ -35,7 +35,7 @@ def get_model(model_cfg):
         model =  SimSiam(get_backbone(model_cfg.backbone))
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers)
-    if model_cfg.name == 'simsiam_kd':
+    elif model_cfg.name == 'simsiam_kd':
         model =  SimSiamKD(get_backbone_kd(model_cfg.backbone))
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers)
