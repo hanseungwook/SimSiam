@@ -14,6 +14,20 @@ def get_backbone(backbone, castrate=True):
 
     return backbone
 
+def get_backbone_kd(backbone, castrate=True):
+    backbone_s = eval(f"{backbone}()")
+    backbone_t = eval(f"{backbone}(pretrained=True)")
+
+    if castrate:
+        backbone_s.output_dim = backbone_s.fc.in_features
+        backbone_s.fc = torch.nn.Identity()
+    
+        backbone_t.output_dim = backbone_t.fc.in_features
+        backbone_t.fc = torch.nn.Identity()
+
+
+    return backbone_s, backbone_t
+
 
 def get_model(model_cfg):    
 
@@ -21,7 +35,10 @@ def get_model(model_cfg):
         model =  SimSiam(get_backbone(model_cfg.backbone))
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers)
-
+    if model_cfg.name == 'simsiam_kd':
+        model =  SimSiamKD(get_backbone_kd(model_cfg.backbone))
+        if model_cfg.proj_layers is not None:
+            model.projector.set_layers(model_cfg.proj_layers)
     elif model_cfg.name == 'byol':
         model = BYOL(get_backbone(model_cfg.backbone))
     elif model_cfg.name == 'simclr':
