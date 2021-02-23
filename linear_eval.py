@@ -6,7 +6,7 @@ import torchvision
 from tqdm import tqdm
 from arguments import get_args
 from augmentations import get_aug
-from models import get_model, get_backbone
+from models import get_model, get_backbone, get_backbone_kd
 from tools import AverageMeter
 from datasets import get_dataset
 from optimizers import get_optimizer, LR_Scheduler
@@ -34,13 +34,19 @@ def main(args):
         **args.dataloader_kwargs
     )
 
-
-    model = get_backbone(args.model.backbone)
+    model_weight_kw = 'backbone.'
+    if args.model.name == 'simsiam_kd':
+        model = get_backbone_kd(args.model.backbone)
+        model_weight_kw = 'backbone_s.'
+    else:
+        model = get_backbone(args.model.backbone)
+        
     classifier = nn.Linear(in_features=model.output_dim, out_features=10, bias=True).to(args.device)
 
     assert args.eval_from is not None
     save_dict = torch.load(args.eval_from, map_location='cpu')
-    msg = model.load_state_dict({k[9:]:v for k, v in save_dict['state_dict'].items() if k.startswith('backbone.')}, strict=True)
+    # Retrieiving only relevant backbone weights (student, in the case of KD) and modifying state_dict keys to match backbone
+    msg = model.load_state_dict({k[len(model_weight_kw):]:v for k, v in save_dict['state_dict'].items() if k.startswith(model_weight_kw)}, strict=True)
     
     # print(msg)
     model = model.to(args.device)
