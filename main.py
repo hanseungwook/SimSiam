@@ -18,7 +18,7 @@ def main(device, args):
 
     train_loader = torch.utils.data.DataLoader(
         dataset=get_dataset(
-            transform=get_aug(train=True, **args.aug_kwargs), 
+            transform=get_aug(dataset=args.dataset_kwargs['dataset'], train=True, **args.aug_kwargs), 
             train=True,
             **args.dataset_kwargs),
         shuffle=True,
@@ -27,7 +27,7 @@ def main(device, args):
     )
     memory_loader = torch.utils.data.DataLoader(
         dataset=get_dataset(
-            transform=get_aug(train=False, train_classifier=False, **args.aug_kwargs), 
+            transform=get_aug(dataset=args.dataset_kwargs['dataset'], train=False, train_classifier=False, **args.aug_kwargs), 
             train=True,
             **args.dataset_kwargs),
         shuffle=False,
@@ -36,7 +36,7 @@ def main(device, args):
     )
     test_loader = torch.utils.data.DataLoader(
         dataset=get_dataset( 
-            transform=get_aug(train=False, train_classifier=False, **args.aug_kwargs), 
+            transform=get_aug(dataset=args.dataset_kwargs['dataset'], train=False, train_classifier=False, **args.aug_kwargs), 
             train=False,
             **args.dataset_kwargs),
         shuffle=False,
