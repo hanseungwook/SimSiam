@@ -203,7 +203,7 @@ class ResNet(nn.Module):
         else:
             return x
 
-def _ResNet(arch, depth, num_filters, block_name='BasicBlock', num_classes=10, pretrained=False, **kwargs):
+def _ResNet(arch, depth, num_filters, block_name='BasicBlock', num_classes=10, pretrained=False, device='cpu', **kwargs):
     model = ResNet(depth, num_filters, block_name, num_classes, **kwargs)
 
     if pretrained:
