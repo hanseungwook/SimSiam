@@ -53,6 +53,24 @@ Accuracy = 90.87
 
 >`export DATA="/path/to/your/datasets/"` and `export LOG="/path/to/your/log/"` will save you the trouble of entering the folder name every single time!
 
+### Run SimSiam_KD / SimSiam_KD_Anchor
+
+SimSiam_KD is a version of SimSiam, in which we conduct knowledge distillation from a teacher to a student network via the contrastive learning objective.
+
+SimSiam_Kd_Anchor is a version of SimSiam_KD, in which we use an anchor point (x) for the teacher network (instead of an augmented view of x).
+
+SimSiam_KD can be run with Slurm (multi-GPU setting) with the following scripts:
+
+For CIFAR-10, ResNet18 -> ResNet18
+```
+sbatch slurm/simsiam_kd_cifar10.slurms
+```
+
+For CIFAR-100, ResNet56 -> ResNet20
+```
+sbatch slurm/simsiam_kd_anchor_cifar100_r56_r20.slurm
+```
+
 ### Run SimCLR
 
 ```
