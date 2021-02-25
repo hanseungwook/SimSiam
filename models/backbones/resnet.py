@@ -7,10 +7,11 @@ and
 https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
 (c) YANG, Wei
 '''
-import torch.nn as nn
-import torch.nn.functional as F
+import os
 import math
 
+import torch.nn as nn
+import torch.nn.functional as F
 
 __all__ = ['resnet']
 
