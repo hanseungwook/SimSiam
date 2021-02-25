@@ -26,6 +26,8 @@ def get_aug(dataset, name='simsiam', image_size=224, train=True, train_classifie
     if train==True:
         if name == 'simsiam' or name == 'simsiam_kd':
             augmentation = SimSiamTransform(image_size, mean_std=norm)
+        elif name == 'simsiam_kd_anchor':
+            augmentation = SimSiamTransform(image_size, mean_std=norm, anchor=True)
         elif name == 'byol':
             augmentation = BYOL_transform(image_size, mean_std=norm)
         elif name == 'simclr':

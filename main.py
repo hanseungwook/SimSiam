@@ -71,10 +71,16 @@ def main(device, args):
         model.train()
         
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{args.train.num_epochs}', disable=args.hide_progress)
-        for idx, ((images1, images2), labels) in enumerate(local_progress):
+        for idx, (images, labels) in enumerate(local_progress):
 
             model.zero_grad()
-            data_dict = model.forward(images1.to(device, non_blocking=True), images2.to(device, non_blocking=True))
+            # Standard case of two augmentations: x1, x2
+            if len(images) == 2:
+                data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True))
+            # Anchor case with two augmentations + anchor: x1, x2, x (weak transformation applied)
+            elif len(images) == 3:
+                data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True), images[2].to(device, non_blocking=True))
+
             loss = data_dict['loss'].mean() # ddp
             loss.backward()
             optimizer.step()
@@ -113,8 +119,6 @@ if __name__ == "__main__":
     main(device=args.device, args=args)
 
     completed_log_dir = args.log_dir.replace('in-progress', 'debug' if args.debug else 'completed')
-
-
 
     os.rename(args.log_dir, completed_log_dir)
     print(f'Log file has been saved to {completed_log_dir}')
