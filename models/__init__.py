@@ -40,7 +40,7 @@ def get_model(model_cfg):
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers)
     elif model_cfg.name == 'simsiam_kd_anchor':
-        model =  SimSiamKDAnchor(get_backbone_kd(model_cfg.backbone_s, model_cfg.backbone_t, model_cfg.num_clases))
+        model =  SimSiamKDAnchor(get_backbone_kd(model_cfg.backbone_s, model_cfg.backbone_t, model_cfg.num_classes))
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers)
     elif model_cfg.name == 'byol':
