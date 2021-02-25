@@ -133,7 +133,7 @@ class SimSiam(nn.Module):
         return {'loss': L}
 
 class SimSiamKD(nn.Module):
-    def __init__(self, backbones=[resnet50, resnet50]):
+    def __init__(self, backbones):
         super().__init__()
         
         self.backbone_s, self.backbone_t = backbones
@@ -150,7 +150,7 @@ class SimSiamKD(nn.Module):
             self.backbone_t,
             # self.projector
         )
-        self.predictor = prediction_MLP(in_dim=self.projector.out_dim, out_dim=self.backbone_t.fc.out_features)
+        self.predictor = prediction_MLP(in_dim=self.projector.out_dim, out_dim=self.backbone_t.output_dim)
     
     def forward(self, x1, x2):
 
