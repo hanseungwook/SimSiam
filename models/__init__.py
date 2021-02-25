@@ -1,9 +1,9 @@
-from .simsiam import SimSiam, SimSiamKD
+from .simsiam import SimSiam, SimSiamKD, SimSiamKDAnchor
 from .byol import BYOL
 from .simclr import SimCLR
 from torchvision.models import resnet50, resnet18
 import torch
-from .backbones import resnet18_cifar_variant1, resnet18_cifar_variant2
+from .backbones import *
 
 def get_backbone(backbone, castrate=True):
     backbone = eval(f"{backbone}()")
@@ -14,9 +14,9 @@ def get_backbone(backbone, castrate=True):
 
     return backbone
 
-def get_backbone_kd(backbone, castrate=True):
-    backbone_s = eval(f"{backbone}()")
-    backbone_t = eval(f"{backbone}(pretrained=True)")
+def get_backbone_kd(backbone_s, backbone_t, castrate=True):
+    backbone_s = eval(f"{backbone_s}()")
+    backbone_t = eval(f"{backbone_t}(pretrained=True)")
 
     if castrate:
         backbone_s.output_dim = backbone_s.fc.in_features
@@ -36,7 +36,11 @@ def get_model(model_cfg):
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers)
     elif model_cfg.name == 'simsiam_kd':
-        model =  SimSiamKD(get_backbone_kd(model_cfg.backbone))
+        model =  SimSiamKD(get_backbone_kd(model_cfg.backbone_s, model_cfg.backbone_t))
+        if model_cfg.proj_layers is not None:
+            model.projector.set_layers(model_cfg.proj_layers)
+    elif model_cfg.name == 'simsiam_kd_anchor':
+        model =  SimSiamKDAnchor(get_backbone_kd(model_cfg.backbone_s, model_cfg.backbone_t))
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers)
     elif model_cfg.name == 'byol':

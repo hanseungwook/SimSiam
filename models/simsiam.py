@@ -27,6 +27,9 @@ class projection_MLP(nn.Module):
         put fc. Its output fc has no ReLU. The hidden fc is 2048-d. 
         This MLP has 3 layers.
         '''
+        self.in_dim = in_dim
+        self.out_dim = out_dim
+        
         self.layer1 = nn.Sequential(
             nn.Linear(in_dim, hidden_dim),
             nn.BatchNorm1d(hidden_dim),
@@ -69,6 +72,10 @@ class prediction_MLP(nn.Module):
         and h’s hidden layer’s dimension is 512, making h a 
         bottleneck structure (ablation in supplement). 
         '''
+
+        self.in_dim = in_dim
+        self.out_dim = out_dim
+        
         self.layer1 = nn.Sequential(
             nn.Linear(in_dim, hidden_dim),
             nn.BatchNorm1d(hidden_dim),
@@ -85,6 +92,24 @@ class prediction_MLP(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         return x 
+
+class Embed(nn.Module):
+    """Embedding module from Contrastive Representation Distillation 
+    https://arxiv.org/pdf/1910.10699.pdf (Page 4)
+
+    Linearly transforms predicted embeddings into the same dimension between student and teacher
+    """
+    def __init__(self, dim_in=1024, dim_out=128):
+        super(Embed, self).__init__()
+        self.linear = nn.Linear(dim_in, dim_out)
+        # self.l2norm = Normalize(2)
+
+    def forward(self, x):
+        # x = x.view(x.shape[0], -1)
+        x = self.linear(x)
+        # x = self.l2norm(x)
+        return x
+
 
 class SimSiam(nn.Module):
     def __init__(self, backbone=resnet50()):
@@ -123,9 +148,9 @@ class SimSiamKD(nn.Module):
         # Teacher encoder
         self.encoder_t =  nn.Sequential( # f encoder
             self.backbone_t,
-            self.projector
+            # self.projector
         )
-        self.predictor = prediction_MLP()
+        self.predictor = prediction_MLP(in_dim=self.projector.out_dim, out_dim=self.backbone_t.fc.out_features)
     
     def forward(self, x1, x2):
 
@@ -135,9 +160,33 @@ class SimSiamKD(nn.Module):
         L = D(p1, z2) / 2 + D(p2, z1) / 2
         return {'loss': L}
 
+class SimSiamKDAnchor(nn.Module):
+    def __init__(self, backbones=[resnet50, resnet50]):
+        super().__init__()
+        
+        self.backbone_s, self.backbone_t = backbones
+        self.projector = projection_MLP(in_dim=self.backbone_s.output_dim)
 
+        # Student encoder
+        self.encoder_s = nn.Sequential( # f encoder
+            self.backbone_s,
+            self.projector
+        )
 
+        # Teacher encoder
+        self.encoder_t =  nn.Sequential( # f encoder
+            self.backbone_t,
+            # self.projector
+        )
+        self.predictor = prediction_MLP(in_dim=self.projector.out_dim, out_dim=self.backbone_t.fc.out_features)
+    
+    def forward(self, x1, x2, x3):
 
+        f_s, f_t, h = self.encoder_s, self.encoder_t, self.predictor
+        z1_1, z1_2, z2 = f_s(x1), f_s(x2), f_t(x3)
+        p1, p2 = h(z1_1), h(z1_2)
+        L = D(p1, z2) / 2 + D(p2, z2) / 2
+        return {'loss': L}
 
 
 
