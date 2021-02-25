@@ -178,7 +178,7 @@ class SimSiamKDAnchor(nn.Module):
             self.backbone_t,
             # self.projector
         )
-        self.predictor = prediction_MLP(in_dim=self.projector.out_dim, out_dim=self.backbone_t.fc.out_features)
+        self.predictor = prediction_MLP(in_dim=self.projector.out_dim, out_dim=self.backbone_t.output_dim)
     
     def forward(self, x1, x2, x3):
 
