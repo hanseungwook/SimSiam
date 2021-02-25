@@ -1,4 +1,4 @@
-name: simsiam-cifar100-experiment-r110-r20
+name: simsiam-kd-cifar100-experiment-r110-r20
 dataset: 
   name: cifar100
   image_size: 32
