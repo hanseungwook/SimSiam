@@ -9,6 +9,7 @@ model:
   backbone_s: resnet20
   backbone_t: resnet56
   proj_layers: 2
+  num_classes: 100
 
 train:
   optimizer: 
