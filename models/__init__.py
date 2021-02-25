@@ -14,9 +14,9 @@ def get_backbone(backbone, castrate=True):
 
     return backbone
 
-def get_backbone_kd(backbone_s, backbone_t, castrate=True):
+def get_backbone_kd(backbone_s, backbone_t, num_classes=10, castrate=True):
     backbone_s = eval(f"{backbone_s}()")
-    backbone_t = eval(f"{backbone_t}(pretrained=True)")
+    backbone_t = eval(f"{backbone_t}(pretrained=True, num_classes={num_classes})")
 
     if castrate:
         backbone_s.output_dim = backbone_s.fc.in_features
@@ -36,11 +36,11 @@ def get_model(model_cfg):
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers)
     elif model_cfg.name == 'simsiam_kd':
-        model =  SimSiamKD(get_backbone_kd(model_cfg.backbone_s, model_cfg.backbone_t))
+        model =  SimSiamKD(get_backbone_kd(model_cfg.backbone_s, model_cfg.backbone_t, model_cfg.num_classes))
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers)
     elif model_cfg.name == 'simsiam_kd_anchor':
-        model =  SimSiamKDAnchor(get_backbone_kd(model_cfg.backbone_s, model_cfg.backbone_t))
+        model =  SimSiamKDAnchor(get_backbone_kd(model_cfg.backbone_s, model_cfg.backbone_t, model_cfg.num_clases))
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers)
     elif model_cfg.name == 'byol':

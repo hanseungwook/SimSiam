@@ -208,7 +208,7 @@ def _ResNet(arch, depth, num_filters, block_name='BasicBlock', num_classes=10, p
 
     if pretrained:
         script_dir = os.path.dirname(__file__)
-        state_dict = torch.load(script_dir + '/state_dicts/cifar100/'+arch+'.pth', map_location=device)
+        state_dict = torch.load(script_dir + '/state_dicts/cifar100/'+arch+'.pth', map_location=device)['model']
         model.load_state_dict(state_dict)
 
     return model
