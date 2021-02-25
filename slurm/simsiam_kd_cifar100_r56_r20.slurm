@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH -J simsiam_kd_cifar100
-#SBATCH -o simsiam_kd_cifar100%j.out
-#SBATCH -e simsiam_kd_cifar100%j.err
+#SBATCH -o simsiam_kd_cifar100_%j.out
+#SBATCH -e simsiam_kd_cifar100_%j.err
 #SBATCH --mail-user=swhan@mit.edu
 #SBATCH --mail-type=ALL
 #SBATCH --gres=gpu:4
