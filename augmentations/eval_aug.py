@@ -14,7 +14,7 @@ class Transform_single():
             ])
         else:
             self.transform = transforms.Compose([
-                transforms.Resize(int(image_size*(8/7)), interpolation=Image.BICUBIC), # 224 -> 256 
+                transforms.Resize(image_size, interpolation=Image.BICUBIC), # 224 -> 256 
                 transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
                 transforms.Normalize(*normalize)
