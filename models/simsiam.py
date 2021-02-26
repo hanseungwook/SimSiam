@@ -177,6 +177,34 @@ class SimSiamKDAnchor(nn.Module):
 ############################################################################
 # Adversarial Formulation
 ############################################################################
+class Discriminator(nn.Module):
+    def __init__(self, in_dim=2048, hidden_dim=512):
+        super().__init__()
+        ''' 
+        Discriminator for estimating ratio (joint / marginal)
+        '''
+
+        self.in_dim = in_dim
+        
+        self.fc = nn.Sequential(
+            nn.Linear(in_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim, hidden_dim//2),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim//2, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.fc(x)
+        
+        return x 
+
 class SimSiamAdv(nn.Module):
     def __init__(self, backbone=resnet50(), proj_dim=128):
         super().__init__()
