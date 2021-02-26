@@ -81,14 +81,14 @@ def main(device, args):
 
             # Discriminator step
             optimizer_d.zero_grad()
-            data_dict_d = model.forward_d(images1, images2)
+            data_dict_d = model.forward(images1, images2, disc=True)
             loss = data_dict_d['loss_d'].mean() # ddp
             loss.backward()
             optimizer_d.step()
 
             # Encoder step
             optimizer_e.zero_grad()
-            data_dict_e = model.forward_e(images1, images2)
+            data_dict_e = model.forward(images1, images2, disc=False)
             loss = data_dict_e['loss_e'].mean()
             loss.backward()
             optimizer_e.step()

@@ -202,7 +202,7 @@ class Discriminator(nn.Module):
 
     def forward(self, x):
         x = self.fc(x)
-        
+
         return x 
 
 class SimSiamAdv(nn.Module):
@@ -219,6 +219,12 @@ class SimSiamAdv(nn.Module):
 
         self.discriminator = Discriminator(in_dim=proj_dim*2)
 
+    def forward(self, x1, x2, disc=False):
+        if not disc:
+            return self.forward_e(x1, x2)
+        else:
+            return self.forward_d(x1, x2)
+        
     def forward_e(self, x1, x2):
 
         f, d = self.encoder, self.discriminator
