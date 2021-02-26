@@ -58,7 +58,7 @@ def main(device, args):
         weight_decay=args.train.optimizer.weight_decay)
 
     lr_scheduler = LR_Scheduler(
-        optimizer,
+        optimizer_e,
         args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256, 
         args.train.num_epochs, args.train.base_lr*args.train.batch_size/256, args.train.final_lr*args.train.batch_size/256, 
         len(train_loader),
