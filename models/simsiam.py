@@ -93,24 +93,6 @@ class prediction_MLP(nn.Module):
         x = self.layer2(x)
         return x 
 
-class Embed(nn.Module):
-    """Embedding module from Contrastive Representation Distillation 
-    https://arxiv.org/pdf/1910.10699.pdf (Page 4)
-
-    Linearly transforms predicted embeddings into the same dimension between student and teacher
-    """
-    def __init__(self, dim_in=1024, dim_out=128):
-        super(Embed, self).__init__()
-        self.linear = nn.Linear(dim_in, dim_out)
-        # self.l2norm = Normalize(2)
-
-    def forward(self, x):
-        # x = x.view(x.shape[0], -1)
-        x = self.linear(x)
-        # x = self.l2norm(x)
-        return x
-
-
 class SimSiam(nn.Module):
     def __init__(self, backbone=resnet50()):
         super().__init__()
@@ -131,6 +113,10 @@ class SimSiam(nn.Module):
         p1, p2 = h(z1), h(z2)
         L = D(p1, z2) / 2 + D(p2, z1) / 2
         return {'loss': L}
+
+############################################################################
+# Knowledge Distillation Models
+############################################################################
 
 class SimSiamKD(nn.Module):
     def __init__(self, backbones):
@@ -188,7 +174,47 @@ class SimSiamKDAnchor(nn.Module):
         L = D(p1, z2) / 2 + D(p2, z2) / 2
         return {'loss': L}
 
+############################################################################
+# Adversarial Formulation
+############################################################################
+class SimSiamAdv(nn.Module):
+    def __init__(self, backbone=resnet50(), proj_dim=128):
+        super().__init__()
+        
+        self.backbone = backbone
+        self.projector = projection_MLP(in_dim=backbone.output_dim, out_dim=proj_dim)
 
+        self.encoder = nn.Sequential( # f encoder
+            self.backbone,
+            self.projector
+        )
+
+        self.discriminator = Discriminator(in_dim=proj_dim*2)
+
+    def forward_e(self, x1, x2):
+
+        f, d = self.encoder, self.discriminator
+        z1, z2 = f(x1), f(x2)
+        L = -1.0 * d(torch.cat((z1, z2), dim=-1))
+        
+        return {'loss_e': L}
+    
+    def forward_d(self, x1, x2):
+        f, d = self.encoder, self.discriminator
+        z1, z2 = f(x1), f(x2)
+        
+        real = torch.ones((x1.shape[0], 1), dtype=torch.float32)
+        fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32)
+
+        real_outputs = d(torch.cat((z1, z2), dim=-1))
+        fake_outputs = d(torch.cat((z1, z2[torch.randperm(z2.size()[0])]), dim=-1))
+        
+        real_loss = F.binary_cross_entropy(real_outputs, real)
+        fake_loss = F.binary_cross_entropy(fake_outputs, fake)
+
+        return {'loss_d': real_loss + fake_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
+
+    
 
 if __name__ == "__main__":
     model = SimSiam()

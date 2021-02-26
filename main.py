@@ -48,11 +48,10 @@ def main(device, args):
     model = get_model(args.model).to(device)
 
     # TODO: Add resume code here
-
     model = torch.nn.DataParallel(model)
 
     # define optimizer
-    optimizer = get_optimizer(
+    optimizer_e, optimizer_d = get_optimizer(
         args.train.optimizer.name, model, 
         lr=args.train.base_lr*args.train.batch_size/256, 
         momentum=args.train.optimizer.momentum,
@@ -74,28 +73,34 @@ def main(device, args):
     global_progress = tqdm(range(0, args.train.stop_at_epoch), desc=f'Training')
     for epoch in global_progress:
         model.train()
-        if 'kd' in args.model.name:
-            model.module.backbone_t.eval()
         
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{args.train.num_epochs}', disable=args.hide_progress)
         for idx, (images, labels) in enumerate(local_progress):
+            images1 = images[0].to(device, non_blocking=True)
+            images2 = images[1].to(device, non_blocking=True)
 
-            model.zero_grad()
-            # Standard case of two augmentations: x1, x2
-            if len(images) == 2:
-                data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True))
-            # Anchor case with two augmentations + anchor: x1, x2, x (weak transformation applied)
-            elif len(images) == 3:
-                data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True), images[2].to(device, non_blocking=True))
-
-            loss = data_dict['loss'].mean() # ddp
+            # Discriminator step
+            optimizer_d.zero_grad()
+            data_dict_d = model.forward_d(images1, images2)
+            loss = data_dict_d['loss_d'].mean() # ddp
             loss.backward()
-            optimizer.step()
+            optimizer_d.step()
+
+            # Encoder step
+            optimizer_e.zero_grad()
+            data_dict_e = model.forward_e(images1, images2)
+            loss = data_dict_e['loss_e'].mean()
+            loss.backward()
+            optimizer_e.step()
+
             lr_scheduler.step()
-            data_dict.update({'lr':lr_scheduler.get_lr()})
+
+            # Merge two dictionaries in data_dict_d and update progress & log
+            data_dict_d.update(data_dict_e)
+            data_dict_d.update({'lr':lr_scheduler.get_lr()})
             
-            local_progress.set_postfix(data_dict)
-            logger.update_scalers(data_dict)
+            local_progress.set_postfix(data_dict_d)
+            logger.update_scalers(data_dict_d)
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:
             backbone = model.module.backbone_s if (args.model.name == 'simsiam_kd' or args.model.name == 'simsiam_kd_anchor') else model.module.backbone
