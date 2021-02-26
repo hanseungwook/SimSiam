@@ -19,11 +19,16 @@ def get_optimizer(name, model, lr, momentum, weight_decay):
         'params': [param for name, param in model.named_parameters() if name.startswith(discriminator_prefix)],
         'lr': lr
     }]
+
+    optimizer, optimizer_e, optimizer_d = None, None, None
     if name == 'lars':
         optimizer = LARS(parameters, lr=lr, momentum=momentum, weight_decay=weight_decay)
+    # Optimizer in adversarial setting
     elif name == 'sgd':
         optimizer_e = torch.optim.SGD(parameters, lr=lr, momentum=momentum, weight_decay=weight_decay)
         optimizer_d = torch.optim.SGD(d_parameters, lr=lr, momentum=momentum, weight_decay=weight_decay)
+    # elif name == 'sgd':
+        # optimizer = torch.optim.SGD(parameters, lr=lr, momentum=momentum, weight_decay=weight_decay)
     elif name == 'lars_simclr': # Careful
         optimizer = LARS_simclr(model.named_modules(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     elif name == 'larc':
@@ -39,6 +44,7 @@ def get_optimizer(name, model, lr, momentum, weight_decay):
         )
     else:
         raise NotImplementedError
+
     return optimizer_e, optimizer_d
 
 
