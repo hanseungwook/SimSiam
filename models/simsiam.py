@@ -246,7 +246,7 @@ class SimSiamAdv(nn.Module):
         real_loss = F.binary_cross_entropy(real_outputs, real)
         fake_loss = F.binary_cross_entropy(fake_outputs, fake)
 
-        return {'loss_d': real_loss + fake_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
+        return {'loss_d': (real_loss + fake_loss) / 2, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
 
     
 
