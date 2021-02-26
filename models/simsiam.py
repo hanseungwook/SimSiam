@@ -237,8 +237,8 @@ class SimSiamAdv(nn.Module):
         f, d = self.encoder, self.discriminator
         z1, z2 = f(x1), f(x2)
         
-        real = torch.ones((x1.shape[0], 1), dtype=torch.float32)
-        fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32)
+        real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+        fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
 
         real_outputs = d(torch.cat((z1, z2), dim=-1))
         fake_outputs = d(torch.cat((z1, z2[torch.randperm(z2.size()[0])]), dim=-1))
