@@ -75,7 +75,7 @@ def main(device, args):
     for epoch in global_progress:
         model.train()
         if 'kd' in args.model.name:
-            model.backbone_t.eval()
+            model.module.backbone_t.eval()
         
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{args.train.num_epochs}', disable=args.hide_progress)
         for idx, (images, labels) in enumerate(local_progress):
