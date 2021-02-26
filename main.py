@@ -99,7 +99,7 @@ def main(device, args):
             data_dict_d.update(data_dict_e)
             data_dict_d.update({'lr':lr_scheduler.get_lr()})
             
-            local_progress.set_postfix({k:v.mean() for k, v in data_dict_d})
+            local_progress.set_postfix({k:v.mean() for k, v in data_dict_d.items()})
             logger.update_scalers(data_dict_d)
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:
