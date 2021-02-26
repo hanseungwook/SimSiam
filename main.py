@@ -46,6 +46,9 @@ def main(device, args):
 
     # define model
     model = get_model(args.model).to(device)
+
+    # TODO: Add resume code here
+
     model = torch.nn.DataParallel(model)
 
     # define optimizer
@@ -64,7 +67,9 @@ def main(device, args):
     )
 
     logger = Logger(tensorboard=args.logger.tensorboard, matplotlib=args.logger.matplotlib, log_dir=args.log_dir)
-    accuracy = 0 
+    best_accuracy = 0.0
+    accuracy = 0
+
     # Start training
     global_progress = tqdm(range(0, args.train.stop_at_epoch), desc=f'Training')
     for epoch in global_progress:
@@ -93,6 +98,15 @@ def main(device, args):
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:
             backbone = model.module.backbone_s if (args.model.name == 'simsiam_kd' or args.model.name == 'simsiam_kd_anchor') else model.module.backbone
             accuracy = knn_monitor(backbone, memory_loader, test_loader, device, k=min(args.train.knn_k, len(memory_loader.dataset)), hide_progress=args.hide_progress) 
+
+            # Save best model (evaluated by knn accuracy)
+            if accuracy > best_accuracy:
+                best_accuracy = accuracy
+                model_path = os.path.join(args.ckpt_dir, f"{args.name}_best.pth")
+                torch.save({
+                    'epoch': epoch+1,
+                    'state_dict':model.module.state_dict()
+                }, model_path)
         
         epoch_dict = {"epoch":epoch, "accuracy":accuracy}
         global_progress.set_postfix(epoch_dict)

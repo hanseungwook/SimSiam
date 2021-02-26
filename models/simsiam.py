@@ -155,9 +155,9 @@ class SimSiamKD(nn.Module):
     def forward(self, x1, x2):
 
         f_s, f_t, h = self.encoder_s, self.encoder_t, self.predictor
-        z1, z2 = f_s(x1), f_t(x2)
-        p1, p2 = h(z1), h(z2)
-        L = D(p1, z2) / 2 + D(p2, z1) / 2
+        z1_1, z1_2, z2_1, z2_2 = f_s(x1), f_s(x2), f_t(x1), f_t(x2)
+        p1, p2 = h(z1_1), h(z1_2)
+        L = D(p1, z2_1) / 2 + D(p2, z2_2) / 2
         return {'loss': L}
 
 class SimSiamKDAnchor(nn.Module):
