@@ -11,7 +11,7 @@ model:
 
 train:
   optimizer: 
-    name: sgd
+    name: adam
     weight_decay: 0.0005
     momentum: 0.9
   warmup_epochs: 10
