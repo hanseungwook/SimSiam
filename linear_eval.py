@@ -57,17 +57,17 @@ def main(args):
     # define optimizer
     optimizer, _ = get_optimizer(
         args.eval.optimizer.name, classifier, 
-        lr=args.eval.base_lr*args.eval.batch_size/256, 
+        lr=args.eval.base_lr, 
         momentum=args.eval.optimizer.momentum, 
         weight_decay=args.eval.optimizer.weight_decay)
 
     # define lr scheduler
-    lr_scheduler = LR_Scheduler(
-        optimizer,
-        args.eval.warmup_epochs, args.eval.warmup_lr*args.eval.batch_size/256, 
-        args.eval.num_epochs, args.eval.base_lr*args.eval.batch_size/256, args.eval.final_lr*args.eval.batch_size/256, 
-        len(train_loader),
-    )
+    # lr_scheduler = LR_Scheduler(
+    #     optimizer,
+    #     args.eval.warmup_epochs, args.eval.warmup_lr*args.eval.batch_size/256, 
+    #     args.eval.num_epochs, args.eval.base_lr*args.eval.batch_size/256, args.eval.final_lr*args.eval.batch_size/256, 
+    #     len(train_loader),
+    # )
 
     loss_meter = AverageMeter(name='Loss')
     acc_meter = AverageMeter(name='Accuracy')
@@ -93,7 +93,7 @@ def main(args):
             loss.backward()
             optimizer.step()
             loss_meter.update(loss.item())
-            lr = lr_scheduler.step()
+            # lr = lr_scheduler.step()
             local_progress.set_postfix({'lr':lr, "loss":loss_meter.val, 'loss_avg':loss_meter.avg})
 
     classifier.eval()

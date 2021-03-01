@@ -40,6 +40,6 @@ echo ""
 echo " Run started at:- "
 date
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 python linear_eval.py --data_dir ../data/ --log_dir ./logs/simsiam_adv_cifar10_adam_eval_linear/ -c configs/simsiam_adv_cifar10_eval_sgd.yaml --ckpt_dir ./experiments/simsiam_kd_cifar_eval_linear/ --eval_from ./experiments/simsiam_adv_cifar10_adam/simsiam-adv-cifar10-experiment-resnet18_cifar_variant1_best.pth
+CUDA_VISIBLE_DEVICES=0,1,2,3 python linear_eval.py --data_dir ../data/ --log_dir ./logs/simsiam_adv_cifar10_adam_eval_linear/ -c configs/simsiam_adv_cifar10_eval_adam.yaml --ckpt_dir ./experiments/simsiam_kd_cifar_eval_linear/ --eval_from ./experiments/simsiam_adv_cifar10_adam/simsiam-adv-cifar10-experiment-resnet18_cifar_variant1_best.pth
 echo "Run completed at:- "
 date
