@@ -16,6 +16,8 @@ def D(p, z, version='simplified'): # negative cosine similarity
     else:
         raise Exception
 
+def l2_metric(p, z):
+    return F.mse_loss(p, z)
 
 
 class projection_MLP(nn.Module):
@@ -137,20 +139,23 @@ class SimSiamKD(nn.Module):
         super().__init__()
         
         self.backbone_s, self.backbone_t = backbones
-        self.projector = projection_MLP(self.backbone_s.output_dim)
+        self.projector = projection_MLP(self.backbone_t.output_dim)
+        self.embed = Embed(dim_in=self.backbone_s.output_dim, dim_out=self.backbone_t=output_dim)
 
         # Student encoder
         self.encoder_s = nn.Sequential( # f encoder
             self.backbone_s,
+            self.embed,
             self.projector
         )
 
         # Teacher encoder
         self.encoder_t =  nn.Sequential( # f encoder
             self.backbone_t,
-            # self.projector
+            self.projector
         )
-        self.predictor = prediction_MLP(in_dim=self.projector.out_dim, out_dim=self.backbone_t.output_dim)
+
+        self.predictor = prediction_MLP(in_dim=self.projector.out_dim)
     
     def forward(self, x1, x2):
 
@@ -158,7 +163,9 @@ class SimSiamKD(nn.Module):
         z1_1, z1_2, z2_1, z2_2 = f_s(x1), f_s(x2), f_t(x1), f_t(x2)
         p1, p2 = h(z1_1), h(z1_2)
         L = D(p1, z2_1) / 2 + D(p2, z2_2) / 2
-        return {'loss': L}
+        L2 = (l2_metric(p1, z2_1) + l2_metric(p2, z2_2)) / 2 
+        
+        return {'loss': L, 'l2': L2}
 
 class SimSiamKDAnchor(nn.Module):
     def __init__(self, backbones=[resnet50, resnet50]):
