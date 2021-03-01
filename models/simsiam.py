@@ -140,7 +140,7 @@ class SimSiamKD(nn.Module):
         
         self.backbone_s, self.backbone_t = backbones
         self.projector = projection_MLP(self.backbone_t.output_dim)
-        self.embed = Embed(dim_in=self.backbone_s.output_dim, dim_out=self.backbone_t=output_dim)
+        self.embed = Embed(dim_in=self.backbone_s.output_dim, dim_out=self.backbone_t.output_dim)
 
         # Student encoder
         self.encoder_s = nn.Sequential( # f encoder
@@ -164,7 +164,7 @@ class SimSiamKD(nn.Module):
         p1, p2 = h(z1_1), h(z1_2)
         L = D(p1, z2_1) / 2 + D(p2, z2_2) / 2
         L2 = (l2_metric(p1, z2_1) + l2_metric(p2, z2_2)) / 2 
-        
+
         return {'loss': L, 'l2': L2}
 
 class SimSiamKDAnchor(nn.Module):
