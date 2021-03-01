@@ -94,7 +94,7 @@ def main(args):
             optimizer.step()
             loss_meter.update(loss.item())
             # lr = lr_scheduler.step()
-            local_progress.set_postfix({'lr':lr, "loss":loss_meter.val, 'loss_avg':loss_meter.avg})
+            local_progress.set_postfix({"loss":loss_meter.val, 'loss_avg':loss_meter.avg})
 
     classifier.eval()
     correct, total = 0, 0
