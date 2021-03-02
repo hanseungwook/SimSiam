@@ -18,6 +18,10 @@ def get_optimizer(name, model, lr, momentum, weight_decay):
         'name': 'discriminator',
         'params': [param for name, param in model.named_parameters() if name.startswith(discriminator_prefix)],
         'lr': lr
+    },{
+        'name': 'base',
+        'params': [param for name, param in model.named_parameters() if not name.startswith(discriminator_prefix)],
+        'lr': lr
     }]
 
     optimizer, optimizer_e, optimizer_d = None, None, None
