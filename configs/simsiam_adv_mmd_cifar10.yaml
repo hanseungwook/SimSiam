@@ -5,7 +5,7 @@ dataset:
   num_workers: 4
 
 model: 
-  name: simsiam_adv_mmd
+  name: simsiam_adv
   backbone: resnet18_cifar_variant1
   proj_layers: 2
 

@@ -51,7 +51,7 @@ def main(device, args):
     model = torch.nn.DataParallel(model)
 
     # define optimizer
-    optimizer_e, optimizer_d = get_optimizer(
+    optimizer_e, _ = get_optimizer(
         args.train.optimizer.name, model, 
         lr=args.train.base_lr, 
         momentum=args.train.optimizer.momentum,
@@ -68,46 +68,26 @@ def main(device, args):
     logger = Logger(tensorboard=args.logger.tensorboard, matplotlib=args.logger.matplotlib, log_dir=args.log_dir)
     best_accuracy = 0.0
     accuracy = 0
-    only_disc = False
 
     # Start training
     global_progress = tqdm(range(0, args.train.stop_at_epoch), desc=f'Training')
     for epoch in global_progress:
-        model.train()
-
-        # Only train discriminator in first epoch
-        if epoch == 0:
-            only_disc = True        
+        model.train()    
         
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{args.train.num_epochs}', disable=args.hide_progress)
         for idx, (images, labels) in enumerate(local_progress):
             images1 = images[0].to(device, non_blocking=True)
             images2 = images[1].to(device, non_blocking=True)
 
-            # Discriminator step
-            optimizer_d.zero_grad()
-            data_dict_d = model.forward(images1, images2, disc=True)
-            loss = data_dict_d['loss_d'].mean() # ddp
+            optimizer_e.zero_grad()
+
+            # Encoder step (MMD estimates ratio internally)
+            data_dict_e = model.forward(images1, images2, disc=False)
+            loss = data_dict_e['loss_e'].mean() # ddp
             loss.backward()
-            optimizer_d.step()
-
-            # Encoder step
-            if (not only_disc) and idx % args.train.g_step_int == 0:
-                optimizer_e.zero_grad()
-                data_dict_e = model.forward(images1, images2, disc=False)
-                loss = data_dict_e['loss_e'].mean()
-                loss.backward()
-                optimizer_e.step()
-
-                data_dict_d.update(data_dict_e)
-
-            # lr_scheduler.step()
-
-            # Merge two dictionaries in data_dict_d and update progress & log
+            optimizer_e.step()
             
-            # data_dict_d.update({'lr':lr_scheduler.get_lr()})
-            
-            local_progress.set_postfix({k:v.mean() for k, v in data_dict_d.items()})
+            local_progress.set_postfix({k:v.mean() for k, v in data_dict_e.items()})
             logger.update_scalers(data_dict_d)
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:
@@ -123,7 +103,6 @@ def main(device, args):
                     'state_dict':model.module.state_dict()
                 }, model_path)
         
-        only_disc = False
         epoch_dict = {"epoch":epoch, "accuracy":accuracy}
         global_progress.set_postfix(epoch_dict)
         logger.update_scalers(epoch_dict)
