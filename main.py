@@ -68,11 +68,16 @@ def main(device, args):
     logger = Logger(tensorboard=args.logger.tensorboard, matplotlib=args.logger.matplotlib, log_dir=args.log_dir)
     best_accuracy = 0.0
     accuracy = 0
+    only_disc = False
 
     # Start training
     global_progress = tqdm(range(0, args.train.stop_at_epoch), desc=f'Training')
     for epoch in global_progress:
         model.train()
+
+        # Only train discriminator in first epoch
+        if epoch == 0:
+            only_disc = True        
         
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{args.train.num_epochs}', disable=args.hide_progress)
         for idx, (images, labels) in enumerate(local_progress):
@@ -115,6 +120,7 @@ def main(device, args):
                     'state_dict':model.module.state_dict()
                 }, model_path)
         
+        only_disc = False
         epoch_dict = {"epoch":epoch, "accuracy":accuracy}
         global_progress.set_postfix(epoch_dict)
         logger.update_scalers(epoch_dict)
