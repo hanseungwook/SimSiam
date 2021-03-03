@@ -92,16 +92,19 @@ def main(device, args):
             optimizer_d.step()
 
             # Encoder step
-            optimizer_e.zero_grad()
-            data_dict_e = model.forward(images1, images2, disc=False)
-            loss = data_dict_e['loss_e'].mean()
-            loss.backward()
-            optimizer_e.step()
+            if (not only_disc) and idx % args.train.g_step_int == 0:
+                optimizer_e.zero_grad()
+                data_dict_e = model.forward(images1, images2, disc=False)
+                loss = data_dict_e['loss_e'].mean()
+                loss.backward()
+                optimizer_e.step()
+
+                data_dict_d.update(data_dict_e)
 
             # lr_scheduler.step()
 
             # Merge two dictionaries in data_dict_d and update progress & log
-            data_dict_d.update(data_dict_e)
+            
             # data_dict_d.update({'lr':lr_scheduler.get_lr()})
             
             local_progress.set_postfix({k:v.mean() for k, v in data_dict_d.items()})
