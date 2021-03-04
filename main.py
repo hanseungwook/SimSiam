@@ -76,7 +76,7 @@ def main(device, args):
         model.train()
 
         # Only train discriminator in first epoch
-        if epoch == 0:
+        if epoch < args.train.d_pretrain_epochs:
             only_disc = True        
         
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{args.train.num_epochs}', disable=args.hide_progress)

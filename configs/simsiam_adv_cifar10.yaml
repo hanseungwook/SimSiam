@@ -24,7 +24,8 @@ train:
   knn_monitor: True # knn monitor will take more time
   knn_interval: 1
   knn_k: 200
-  g_step_int: 5
+  d_pretrain_epochs: 5 # Number of epochs to pre-train the discriminator
+  g_step_int: 5 # Iteration interval in which to update the generator/encoder
 eval: # linear evaluation, False will turn off automatic evaluation after training
   optimizer: 
     name: sgd
