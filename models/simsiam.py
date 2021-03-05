@@ -13,6 +13,8 @@ def D(p, z, version='simplified'): # negative cosine similarity
 
     elif version == 'simplified':# same thing, much faster. Scroll down, speed test in __main__
         return - F.cosine_similarity(p, z.detach(), dim=-1).mean()
+    elif version == 'symmetric':
+        return - F.cosine_similarity(p, z, dim=-1).mean()
     else:
         raise Exception
 
@@ -248,7 +250,39 @@ class SimSiamAdv(nn.Module):
 
         return {'loss_d': (real_loss + fake_loss) / 2, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
 
+
+class SimSiamJoint(nn.Module):
+    def __init__(self, backbone=resnet50(), proj_dim=128):
+        super().__init__()
+        
+        self.backbone = backbone
+        self.projector = projection_MLP(in_dim=backbone.output_dim, out_dim=proj_dim)
+
+        self.encoder = nn.Sequential( # f encoder
+            self.backbone,
+            self.projector
+        )
+
+        self.discriminator = Discriminator(in_dim=proj_dim*2)
     
+    def forward(self, x1, x2):
+        f, d = self.encoder, self.discriminator
+        z1, z2 = f(x1), f(x2)
+
+        sym_loss = D(z1, z2, version='symmetric')
+        
+        real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+        fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+
+        real_outputs = d(torch.cat((z1, z2), dim=-1))
+        fake_outputs = d(torch.cat((z1[torch.randperm(z1.size()[0])], z2[torch.randperm(z2.size()[0])]), dim=-1))
+        
+        real_loss = F.binary_cross_entropy(real_outputs, real)
+        fake_loss = F.binary_cross_entropy(fake_outputs, fake)
+
+        d_loss = (real_loss + fake_loss) / 2
+
+        return {'loss': sym_loss + d_loss, 'loss_sym': sym_loss, 'loss_d': d_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
 
 if __name__ == "__main__":
     model = SimSiam()
