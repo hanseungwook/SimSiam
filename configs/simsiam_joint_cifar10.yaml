@@ -1,11 +1,11 @@
-name: simsiam-adv-cifar10-experiment-resnet18_cifar_variant1
+name: simsiam-joint-cifar10-experiment-resnet18_cifar_variant1
 dataset: 
   name: cifar10
   image_size: 32
   num_workers: 4
 
 model: 
-  name: simsiam_adv
+  name: simsiam_joint
   backbone: resnet18_cifar_variant1
   proj_layers: 2
 
