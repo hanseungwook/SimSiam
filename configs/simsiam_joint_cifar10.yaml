@@ -18,8 +18,8 @@ train:
   # warmup_lr: 0
   base_lr: 0.0005
   # final_lr: 0
-  num_epochs: 5 # this parameter influence the lr decay
-  stop_at_epoch: 5 # has to be smaller than num_epochs
+  num_epochs: 800 # this parameter influence the lr decay
+  stop_at_epoch: 800 # has to be smaller than num_epochs
   batch_size: 512
   knn_monitor: True # knn monitor will take more time
   knn_interval: 1
