@@ -83,7 +83,7 @@ def main(device, args):
             # Optimizer step
             optimizer.zero_grad()
             data_dict = model.forward(images1, images2)
-            loss = data_dict_d['loss'].mean() # ddp
+            loss = data_dict['loss'].mean() # ddp
             loss.backward()
             optimizer.step()
             
