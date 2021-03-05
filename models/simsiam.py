@@ -265,7 +265,7 @@ class SimSiamJoint(nn.Module):
 
         self.discriminator = Discriminator(in_dim=proj_dim*2)
     
-    def forward(self, x1, x2):
+    def forward(self, x1, x2, logistic_loss_weight=1.0):
         f, d = self.encoder, self.discriminator
         z1, z2 = f(x1), f(x2)
 
@@ -280,7 +280,7 @@ class SimSiamJoint(nn.Module):
         real_loss = F.binary_cross_entropy(real_outputs, real)
         fake_loss = F.binary_cross_entropy(fake_outputs, fake)
 
-        d_loss = (real_loss + fake_loss) / 2
+        d_loss = (real_loss + fake_loss) / 2 * logistic_loss_weight
 
         return {'loss': sym_loss + d_loss, 'loss_sym': sym_loss, 'loss_d': d_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
 
