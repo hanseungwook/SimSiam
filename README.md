@@ -90,5 +90,11 @@ CUDA_VISIBLE_DEVICES=2 python main.py --data_dir ../Data/ --log_dir ../logs/ -c 
 
 If you find this repo helpful, please consider star so that I have the motivation to improve it.
 
+### Branches
+
+`adv`: Two-player formulation: discriminator estimating the ratio of joint / marginal and encoder maximizing it \
+`adv-mmd`: Two-player formulation in which discriminator is replaced with a MMD estimator \
+`joint`: Discrimator and encoder are treated as an end-to-end model estimating the ratio of joint / marginal (with symmetric loss added at z-level) \
+`e2e-baseline`: End-to-end model only estimating the ratio (two versions, in which the two distributions are created at x and z-levels)
 
 
