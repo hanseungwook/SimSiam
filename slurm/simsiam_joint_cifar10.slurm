@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH -J simsiam_adv_cifar
-#SBATCH -o simsiam_adv_cifar10_%j.out
-#SBATCH -e simsiam_adv_cifar10_%j.err
+#SBATCH -J simsiam_joint_cifar10
+#SBATCH -o simsiam_joint_cifar10_%j.out
+#SBATCH -e simsiam_joint_cifar10_%j.err
 #SBATCH --mail-user=swhan@mit.edu
 #SBATCH --mail-type=ALL
 #SBATCH --gres=gpu:4
