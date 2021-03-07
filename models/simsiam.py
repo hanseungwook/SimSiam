@@ -284,10 +284,10 @@ class SimSiamJoint(nn.Module):
 
         # No symmetric loss
         if sym_loss_weight <= 0.0:
-            return {'loss_d': d_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
+            return {'loss': d_loss, 'loss_d': d_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
         # No logistic loss
         elif logistic_loss_weight <= 0.0:
-            return {'loss_sym': sym_loss}
+            return {'loss': sym_loss, 'loss_sym': sym_loss}
         # Both symmetric and logistic loss present
         else:
             return {'loss': sym_loss + d_loss, 'loss_sym': sym_loss, 'loss_d': d_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
