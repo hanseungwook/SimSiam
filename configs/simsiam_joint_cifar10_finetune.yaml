@@ -9,7 +9,8 @@ model:
   backbone: resnet18_cifar_variant1
   proj_layers: 2
 
-load_model: False
+load_model:
+  weights_path: /nobackup/users/swhan/SimSiam/experiments/simsiam_joint_cifar10_logistic20/simsiam-joint-cifar10-experiment-resnet18_cifar_variant1_best.pth
 
 train:
   optimizer: 
@@ -26,7 +27,7 @@ train:
   knn_monitor: True # knn monitor will take more time
   knn_interval: 1
   knn_k: 200
-  logistic_loss_weight: 10.0
+  logistic_loss_weight: 1.0
 eval: # linear evaluation, False will turn off automatic evaluation after training
   optimizer: 
     name: sgd

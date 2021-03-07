@@ -1,4 +1,4 @@
-import os
+import os, sys
 import torch
 import torch.nn as nn
 import torch.nn.functional as F 
@@ -44,10 +44,17 @@ def main(device, args):
         **args.dataloader_kwargs
     )
 
-    # define model
-    model = get_model(args.model).to(device)
+    # Define model
+    model = get_model(args.model)
 
-    # TODO: Add resume code here
+    # Load model
+    if args.load_model:
+        print('Loading model', file=sys.stderr)
+        checkpoint = torch.load(args.load_model.weights_path, map_location='cpu')
+        model.load_state_dict(checkpoint['state_dict'])
+
+    # Move to device and DP
+    model = model.to(device)
     model = torch.nn.DataParallel(model)
 
     # define optimizer
