@@ -89,7 +89,7 @@ def main(device, args):
 
             # Optimizer step
             optimizer.zero_grad()
-            data_dict = model.forward(images1, images2, logistic_loss_weight=args.train.logistic_loss_weight)
+            data_dict = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight)
             loss = data_dict['loss'].mean() # ddp
             loss.backward()
             optimizer.step()
