@@ -109,6 +109,13 @@ def main(device, args):
                     'epoch': epoch+1,
                     'state_dict':model.module.state_dict()
                 }, model_path)
+
+            if epoch % 10 == 0:
+                model_path = os.path.join(args.ckpt_dir, f"{args.name}_latest.pth")
+                torch.save({
+                    'epoch': epoch+1,
+                    'state_dict':model.module.state_dict()
+                }, model_path)
         
         epoch_dict = {"epoch":epoch, "accuracy":accuracy}
         global_progress.set_postfix(epoch_dict)
