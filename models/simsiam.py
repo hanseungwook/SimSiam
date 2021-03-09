@@ -267,9 +267,11 @@ class SimSiamJoint(nn.Module):
     
     def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=1.0):
         f, d = self.encoder, self.discriminator
-        joint = torch.cat((x1, x2), dim=1)
-        marginal = torch.cat((x1[torch.randperm(x1.size()[0])], x2[torch.randperm(x2.size()[0])]), dim=1)
-        z_j, z_m = f(joint), f(marginal)
+
+        # marginal = torch.cat((x1[torch.randperm(x1.size()[0])], x2[torch.randperm(x2.size()[0])]), dim=1)
+        z1, z2 = f(x1), f(x2)
+        z_j = torch.cat((z1, z2), dim=-1)
+        z_m = torch.cat((z1[torch.randperm(z1.size()[0])], z2[torch.randperm(z2.size()[0])]), dim=-1)
 
         sym_loss = D(z_j, z_m, version='symmetric') if sym_loss_weight > 0.0 else 0.0
         
