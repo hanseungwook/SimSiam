@@ -7,7 +7,7 @@ dataset:
 model: 
   name: simsiam_joint
   backbone: resnet18_cifar_variant1
-  proj_layers: 0
+  proj_layers: None
 
 load_model: False
 
