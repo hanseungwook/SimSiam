@@ -110,7 +110,7 @@ def main(device, args):
                     'state_dict':model.module.state_dict()
                 }, model_path)
 
-            if epoch % 10 == 0:
+            if (epoch+1) % 10 == 0:
                 model_path = os.path.join(args.ckpt_dir, f"{args.name}_latest.pth")
                 torch.save({
                     'epoch': epoch+1,
