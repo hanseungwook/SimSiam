@@ -263,7 +263,7 @@ class SimSiamJoint(nn.Module):
             self.backbone
         )
 
-        self.discriminator = Discriminator(in_dim=backbone.output_dim*2)
+        self.discriminator = Discriminator(in_dim=backbone.output_dim)
     
     def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=1.0):
         f, d = self.encoder, self.discriminator
