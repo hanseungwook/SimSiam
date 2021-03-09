@@ -22,7 +22,8 @@ def knn_monitor(net, memory_data_loader, test_data_loader, epoch, k=200, t=0.1, 
         test_bar = tqdm(test_data_loader, desc='kNN', disable=hide_progress)
         for data, target in test_bar:
             data, target = data.cuda(non_blocking=True), target.cuda(non_blocking=True)
-            feature = net(data)
+            paired = torch.cat((data, data), dim=1)
+            feature = net(paired)
             feature = F.normalize(feature, dim=1)
             
             pred_labels = knn_predict(feature, feature_bank, feature_labels, classes, k, t)
