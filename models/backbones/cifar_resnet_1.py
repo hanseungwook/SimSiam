@@ -122,7 +122,7 @@ class ResNet(nn.Module):
         self.base_width = width_per_group
         
         ## CIFAR10: kernel_size 7 -> 3, stride 2 -> 1, padding 3->1
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(6, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False)
         ## END
         
         self.bn1 = norm_layer(self.inplanes)

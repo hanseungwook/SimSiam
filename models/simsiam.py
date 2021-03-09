@@ -58,6 +58,8 @@ class projection_MLP(nn.Module):
         elif self.num_layers == 2:
             x = self.layer1(x)
             x = self.layer3(x)
+        elif self.num_layers == 0:
+            x = x
         else:
             raise Exception
         return x 
@@ -256,26 +258,26 @@ class SimSiamJoint(nn.Module):
         super().__init__()
         
         self.backbone = backbone
-        self.projector = projection_MLP(in_dim=backbone.output_dim, out_dim=proj_dim)
 
         self.encoder = nn.Sequential( # f encoder
-            self.backbone,
-            self.projector
+            self.backbone
         )
 
-        self.discriminator = Discriminator(in_dim=proj_dim*2)
+        self.discriminator = Discriminator(in_dim=backbone.output_dim*2)
     
     def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=1.0):
         f, d = self.encoder, self.discriminator
-        z1, z2 = f(x1), f(x2)
+        joint = torch.cat((x1, x2), dim=1)
+        marginal = torch.cat((x1[torch.randperm(x1.size()[0])], x2[torch.randperm(x2.size()[0])]), dim=1)
+        z_j, z_m = f(joint), f(marginal)
 
-        sym_loss = D(z1, z2, version='symmetric') if sym_loss_weight > 0.0 else 0.0
+        sym_loss = D(z_j, z_m, version='symmetric') if sym_loss_weight > 0.0 else 0.0
         
         real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
         fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
 
-        real_outputs = d(torch.cat((z1, z2), dim=-1))
-        fake_outputs = d(torch.cat((z1[torch.randperm(z1.size()[0])], z2[torch.randperm(z2.size()[0])]), dim=-1))
+        real_outputs = d(z_j)
+        fake_outputs = d(z_m)
         
         real_loss = F.binary_cross_entropy(real_outputs, real)
         fake_loss = F.binary_cross_entropy(fake_outputs, fake)
