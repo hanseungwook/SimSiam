@@ -263,13 +263,15 @@ class SimSiamJoint(nn.Module):
             self.projector
         )
 
+        self.predictor = prediction_MLP(in_dim=proj_dim, hidden_dim=proj_dim, out_dim=proj_dim)
+
         self.discriminator = Discriminator(in_dim=proj_dim*2)
     
     def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=1.0):
-        f, d = self.encoder, self.discriminator
+        f, d, p = self.encoder, self.discriminator, self.predictor
         z1, z2 = f(x1), f(x2)
-
-        sym_loss = D(z1, z2, version='symmetric') if sym_loss_weight > 0.0 else 0.0
+        p1, p2 = p(z1), p(z2)
+        sym_loss = (D(p1, z2, version='symmetric') + D(p2, z1, version='symmetric')) * 0.5 if sym_loss_weight > 0.0 else 0.0
         
         if logistic_loss_weight > 0.0:
             real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
