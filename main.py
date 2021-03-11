@@ -58,7 +58,7 @@ def main(device, args):
     model = torch.nn.DataParallel(model)
 
     # define optimizer
-    _, optimizer = get_optimizer(
+    optimizer_e, optimizer_p = get_optimizer(
         args.train.optimizer.name, model, 
         lr=args.train.base_lr, 
         momentum=args.train.optimizer.momentum,
@@ -75,7 +75,6 @@ def main(device, args):
     logger = Logger(tensorboard=args.logger.tensorboard, matplotlib=args.logger.matplotlib, log_dir=args.log_dir)
     best_accuracy = 0.0
     accuracy = 0
-    only_disc = False
 
     # Start training
     global_progress = tqdm(range(0, args.train.stop_at_epoch), desc=f'Training')
@@ -87,12 +86,18 @@ def main(device, args):
             images1 = images[0].to(device, non_blocking=True)
             images2 = images[1].to(device, non_blocking=True)
 
-            # Optimizer step
-            optimizer.zero_grad()
+            model.zero_grad()
+            # Predictor step
             data_dict = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight)
-            loss = data_dict['loss'].mean() # ddp
-            loss.backward()
-            optimizer.step()
+            loss_p = data_dict['loss_p'].mean()
+            loss_p.backward()
+            optimizer_p.step()
+
+            # Encoder step
+            optimizer_e.zero_grad()
+            loss_e = data_dict['loss_e'].mean()
+            loss_e.backward()
+            optimizer_e.step()
             
             local_progress.set_postfix({k:v.mean() for k, v in data_dict.items()})
             logger.update_scalers(data_dict)

@@ -1,4 +1,4 @@
-from .simsiam import SimSiam, SimSiamKD, SimSiamKDAnchor, SimSiamAdv, SimSiamJoint
+from .simsiam import SimSiam, SimSiamCD, SimSiamKD, SimSiamKDAnchor, SimSiamAdv, SimSiamJoint
 from .byol import BYOL
 from .simclr import SimCLR
 from torchvision.models import resnet50, resnet18
@@ -33,6 +33,10 @@ def get_model(model_cfg):
 
     if model_cfg.name == 'simsiam':
         model =  SimSiam(get_backbone(model_cfg.backbone))
+        if model_cfg.proj_layers is not None:
+            model.projector.set_layers(model_cfg.proj_layers)
+    elif model_cfg.name == 'simsiam_cd':
+        model =  SimSiamCD(get_backbone(model_cfg.backbone))
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers)
     elif model_cfg.name == 'simsiam_kd':

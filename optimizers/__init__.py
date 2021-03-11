@@ -7,23 +7,23 @@ from .lr_scheduler import LR_Scheduler
 
 def get_optimizer(name, model, lr, momentum, weight_decay):
 
-    discriminator_prefix = ('module.discriminator', 'discriminator')
+    predictor_prefix = ('module.predictor', 'predictor')
     parameters = [{
         'name': 'base',
-        'params': [param for name, param in model.named_parameters() if not name.startswith(discriminator_prefix)],
+        'params': [param for name, param in model.named_parameters() if not name.startswith(predictor_prefix)],
         'lr': lr
     }]
 
     d_parameters = [{
-        'name': 'discriminator',
-        'params': [param for name, param in model.named_parameters() if name.startswith(discriminator_prefix)],
+        'name': 'predictor',
+        'params': [param for name, param in model.named_parameters() if name.startswith(predictor_prefix)],
         'lr': lr
     }
-    ,{
-        'name': 'base',
-        'params': [param for name, param in model.named_parameters() if not name.startswith(discriminator_prefix)],
-        'lr': lr
-    }
+    # ,{
+    #     'name': 'base',
+    #     'params': [param for name, param in model.named_parameters() if not name.startswith(discriminator_prefix)],
+    #     'lr': lr
+    # }
     ]
 
     optimizer, optimizer_e, optimizer_d = None, None, None

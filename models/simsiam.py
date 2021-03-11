@@ -177,6 +177,34 @@ class SimSiamKDAnchor(nn.Module):
         return {'loss': L}
 
 ############################################################################
+# Coordinate Descent Formulation
+############################################################################
+class SimSiamCD(nn.Module):
+    def __init__(self, backbone=resnet50()):
+        super().__init__()
+        
+        self.backbone = backbone
+        self.projector = projection_MLP(backbone.output_dim)
+
+        self.encoder = nn.Sequential( # f encoder
+            self.backbone,
+            self.projector
+        )
+        self.predictor = prediction_MLP()
+    
+    def forward(self, x1, x2, reverse=False):
+
+        f, h = self.encoder, self.predictor
+        z1, z2 = f(x1), f(x2)
+        p1, p2 = h(z1), h(z2)
+
+        L_e = D(p1, z2, version='symmetric')
+        L_p = D(p2, z1, version='symmetric')
+        L = (L_e + L_p) / 2.0
+
+        return {'loss': L, 'loss_e': L_e, 'loss_p': L_p}
+
+############################################################################
 # Adversarial Formulation
 ############################################################################
 class Discriminator(nn.Module):
