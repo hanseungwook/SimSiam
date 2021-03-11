@@ -198,11 +198,17 @@ class SimSiamCD(nn.Module):
         z1, z2 = f(x1), f(x2)
         p1, p2 = h(z1), h(z2)
 
-        L_e = D(p1, z2, version='symmetric')
-        L_p = D(p2, z1, version='symmetric')
-        L = (L_e + L_p) / 2.0
+        if not reverse:
+            p1 = h(z1)
+            L_p = D(p1, z2, version='symmetric')
+            
+            return {'loss_p': L_p}
+        else:
+            p2 = h(z2)
+            L_e = D(p2, z1, version='symmetric')
 
-        return {'loss': L, 'loss_e': L_e, 'loss_p': L_p}
+            return {'loss_e': L_e}
+            
 
 ############################################################################
 # Adversarial Formulation

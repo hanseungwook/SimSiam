@@ -88,19 +88,24 @@ def main(device, args):
 
             model.zero_grad()
             # Predictor step
-            data_dict = model.forward(images1, images2)
-            loss_p = data_dict['loss_p'].mean()
+            data_dict_p = model.forward(images1, images2)
+            loss_p = data_dict_p['loss_p'].mean()
             loss_p.backward()
             optimizer_p.step()
 
+            
             # Encoder step
-            optimizer_e.zero_grad()
-            loss_e = data_dict['loss_e'].mean()
+            model.zero_grad()
+            data_dict_e = model.forward(images1, images2, reverse=True)
+            loss_e = data_dict_e['loss_e'].mean()
             loss_e.backward()
             optimizer_e.step()
             
-            local_progress.set_postfix({k:v.mean() for k, v in data_dict.items()})
-            logger.update_scalers(data_dict)
+            # Combine two dicts
+            data_dict_p.update(data_dict_e)
+            data_dict_p['loss'] = (data_dict_p['loss_p'] + data_dict_p['loss_e']) / 2.0
+            local_progress.set_postfix({k:v.mean() for k, v in data_dict_p.items()})
+            logger.update_scalers(data_dict_p)
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:
             backbone = model.module.backbone_s if (args.model.name == 'simsiam_kd' or args.model.name == 'simsiam_kd_anchor') else model.module.backbone
