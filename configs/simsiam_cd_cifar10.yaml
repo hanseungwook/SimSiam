@@ -9,6 +9,8 @@ model:
   backbone: resnet18_cifar_variant1
   proj_layers: 2
 
+load_model: False
+
 train:
   optimizer: 
     name: sgd
