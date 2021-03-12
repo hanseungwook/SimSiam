@@ -14,14 +14,14 @@ class LossScheduler(object):
         self.min_lw = min_lw
         self.decay_rate = decay_rate
         self.decay_int = decay_int
-        self.step = 0
+        self.cur_step = 0
     
     def step(self):
-        self.step += 1
+        self.cur_step += 1
 
         return self.get_lw()
     
     def get_lw(self):
         # Only decay down to the min_lw (minimum loss weight)
-        return max(self.init_lw * (self.decay_rate ** (self.step / self.decay_int)), self.min_lw)
+        return max(self.init_lw * (self.decay_rate ** (self.cur_step / self.decay_int)), self.min_lw)
     
