@@ -103,7 +103,7 @@ def main(device, args):
             data_dict.update({'sym_loss_weight': args.train.symmetric_loss_weight, 'logistic_loss_weight': loss_scheduler.get_lw()})
             loss_scheduler.step() # Step loss scheduler for logistic loss
             
-            local_progress.set_postfix({k:v.mean() for k, v in data_dict.items()})
+            local_progress.set_postfix({k:v.mean() if isinstance(v, torch.Tensor) else k:v for k, v in data_dict.items()})
             logger.update_scalers(data_dict)
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:
