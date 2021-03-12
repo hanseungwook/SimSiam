@@ -19,7 +19,7 @@ class LossScheduler(object):
     def step(self):
         self.step += 1
 
-        return self.get_lr()
+        return self.get_lw()
     
     def get_lw(self):
         # Only decay down to the min_lw (minimum loss weight)

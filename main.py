@@ -100,7 +100,7 @@ def main(device, args):
             loss.backward()
             optimizer.step()
 
-            data_dict.update({'sym_loss_weight': args.train.symmetric_loss_weight, 'logistic_loss_weight': loss.scheduler.get_lw()})
+            data_dict.update({'sym_loss_weight': args.train.symmetric_loss_weight, 'logistic_loss_weight': loss_scheduler.get_lw()})
             loss_scheduler.step() # Step loss scheduler for logistic loss
             
             local_progress.set_postfix({k:v.mean() for k, v in data_dict.items()})
