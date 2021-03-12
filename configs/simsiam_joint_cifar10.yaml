@@ -27,7 +27,11 @@ train:
   knn_interval: 1
   knn_k: 200
   symmetric_loss_weight: 1.0
-  logistic_loss_weight: 10.0
+  logistic_loss_weight: 20.0
+  loss_scheduler:
+    min_lw: 0.05 # Minimum loss weight we want to decay down to
+    decay_rate: 0.75 
+    decay_int: 1 # Interval (in epochs) to perform decay
 eval: # linear evaluation, False will turn off automatic evaluation after training
   optimizer: 
     name: sgd

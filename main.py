@@ -8,7 +8,7 @@ from tqdm import tqdm
 from arguments import get_args
 from augmentations import get_aug
 from models import get_model
-from tools import AverageMeter, knn_monitor, Logger, file_exist_check
+from tools import AverageMeter, knn_monitor, Logger, LossScheduler, file_exist_check
 from datasets import get_dataset
 from optimizers import get_optimizer, LR_Scheduler
 from linear_eval import main as linear_eval
@@ -64,6 +64,12 @@ def main(device, args):
         momentum=args.train.optimizer.momentum,
         weight_decay=args.train.optimizer.weight_decay)
 
+    # Define logistic loss scheduler
+    loss_scheduler = LossScheduler(init_lw=args.train.logistic_loss_weight,
+                                   min_lw=args.train.loss_scheduler.min_lw,
+                                   decay_rate=args.train.loss_scheduler.decay_rate,
+                                   decay_int=args.train.loss_scheduler.decay_int)    
+
     # lr_scheduler = LR_Scheduler(
     #     optimizer_e,
     #     args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256, 
@@ -89,10 +95,13 @@ def main(device, args):
 
             # Optimizer step
             optimizer.zero_grad()
-            data_dict = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight)
+            data_dict = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=loss_scheduler.get_lw())
             loss = data_dict['loss'].mean() # ddp
             loss.backward()
             optimizer.step()
+
+            data_dict.update({'sym_loss_weight': args.train.symmetric_loss_weight, 'logistic_loss_weight': loss.scheduler.get_lw()})
+            loss_scheduler.step() # Step loss scheduler for logistic loss
             
             local_progress.set_postfix({k:v.mean() for k, v in data_dict.items()})
             logger.update_scalers(data_dict)
