@@ -101,7 +101,6 @@ def main(device, args):
             optimizer.step()
 
             data_dict.update({'sym_loss_weight': float(args.train.symmetric_loss_weight), 'logistic_loss_weight': loss_scheduler.get_lw()})
-            loss_scheduler.step() # Step loss scheduler for logistic loss
             
             local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
             logger.update_scalers(data_dict)
@@ -126,6 +125,7 @@ def main(device, args):
                     'state_dict':model.module.state_dict()
                 }, model_path)
         
+        loss_scheduler.step() # Step loss scheduler for logistic loss
         epoch_dict = {"epoch":epoch, "accuracy":accuracy}
         global_progress.set_postfix(epoch_dict)
         logger.update_scalers(epoch_dict)
