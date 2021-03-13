@@ -30,7 +30,7 @@ def get_aug(dataset, name='simsiam', image_size=224, train=True, train_classifie
             augmentation = SimSiamTransform(image_size, mean_std=norm, anchor=True)
         elif name == 'byol':
             augmentation = BYOL_transform(image_size, mean_std=norm)
-        elif name == 'simclr':
+        elif name == 'simclr' or 'simclr_joint':
             augmentation = SimCLRTransform(image_size, mean_std=norm)
         else:
             raise NotImplementedError

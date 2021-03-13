@@ -58,19 +58,19 @@ def main(device, args):
     model = torch.nn.DataParallel(model)
 
     # define optimizer
-    _, optimizer = get_optimizer(
+    optimizer = get_optimizer(
         args.train.optimizer.name, model, 
-        lr=args.train.base_lr, 
+        lr=args.train.base_lr*args.train.batch_size/256, 
         momentum=args.train.optimizer.momentum,
         weight_decay=args.train.optimizer.weight_decay)
 
-    # lr_scheduler = LR_Scheduler(
-    #     optimizer_e,
-    #     args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256, 
-    #     args.train.num_epochs, args.train.base_lr*args.train.batch_size/256, args.train.final_lr*args.train.batch_size/256, 
-    #     len(train_loader),
-    #     constant_predictor_lr=True # see the end of section 4.2 predictor
-    # )
+    lr_scheduler = LR_Scheduler(
+        optimizer,
+        args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256, 
+        args.train.num_epochs, args.train.base_lr*args.train.batch_size/256, args.train.final_lr*args.train.batch_size/256, 
+        len(train_loader),
+        constant_predictor_lr=True # see the end of section 4.2 predictor
+    )
 
     logger = Logger(tensorboard=args.logger.tensorboard, matplotlib=args.logger.matplotlib, log_dir=args.log_dir)
     best_accuracy = 0.0

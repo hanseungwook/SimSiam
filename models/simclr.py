@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet50
 
+from simsiam import Discriminator
+
 def NT_XentLoss(z1, z2, temperature=0.5):
     z1 = F.normalize(z1, dim=1)
     z2 = F.normalize(z2, dim=1)
@@ -62,6 +64,47 @@ class SimCLR(nn.Module):
         loss = NT_XentLoss(z1, z2)
         return {'loss':loss}
 
+class SimCLRJoint(nn.Module):
+
+    def __init__(self, backbone=resnet50(), proj_dim=128):
+        super().__init__()
+        
+        self.backbone = backbone
+        self.projector = projection_MLP(in_dim=backbone.output_dim, out_dim=proj_dim)
+        self.encoder = nn.Sequential(
+            self.backbone,
+            self.projector
+        )
+
+        self.discriminator = Discriminator(in_dim=proj_dim*2)
+
+    def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=1.0):
+        z1 = self.encoder(x1)
+        z2 = self.encoder(x2)
+
+        sym_loss = NT_XentLoss(z1, z2) if sym_loss_weight > 0.0 else 0.0
+
+        if logistic_loss_weight > 0.0:
+            real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+            fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+
+            real_outputs = d(torch.cat((z1, z2), dim=-1))
+            fake_outputs = d(torch.cat((z1[torch.randperm(z1.size()[0])], z2[torch.randperm(z2.size()[0])]), dim=-1))
+            
+            real_loss = F.binary_cross_entropy(real_outputs, real)
+            fake_loss = F.binary_cross_entropy(fake_outputs, fake)
+
+            d_loss = ((real_loss + fake_loss) / 2 * logistic_loss_weight) if logistic_loss_weight > 0.0 else 0.0
+        
+        # No symmetric loss
+        if sym_loss_weight <= 0.0:
+            return {'loss': d_loss, 'loss_d': d_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
+        # No logistic loss
+        elif logistic_loss_weight <= 0.0:
+            return {'loss': sym_loss, 'loss_sym': sym_loss}
+        # Both symmetric and logistic loss present
+        else:
+            return {'loss': sym_loss + d_loss, 'loss_sym': sym_loss, 'loss_d': d_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
 
 
 

@@ -1,6 +1,6 @@
 from .simsiam import SimSiam, SimSiamKD, SimSiamKDAnchor, SimSiamAdv, SimSiamJoint
 from .byol import BYOL
-from .simclr import SimCLR
+from .simclr import SimCLR, SimCLRJoint
 from torchvision.models import resnet50, resnet18
 import torch
 from .backbones import *
@@ -55,6 +55,8 @@ def get_model(model_cfg):
         model = BYOL(get_backbone(model_cfg.backbone))
     elif model_cfg.name == 'simclr':
         model = SimCLR(get_backbone(model_cfg.backbone))
+    elif model_cfg.name == 'simclr_joint':
+        model = SimCLRJoint(get_backbone(model_cfg.backbone))
     elif model_cfg.name == 'swav':
         raise NotImplementedError
     else:
