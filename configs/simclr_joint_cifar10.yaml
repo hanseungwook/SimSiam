@@ -14,6 +14,7 @@ train:
   optimizer: 
     name: lars_simclr
     weight_decay: 1.e-6
+    momentum: 0.9
   warmup_epochs: 10
   warmup_lr: 0
   base_lr: 0.3
