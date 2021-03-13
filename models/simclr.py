@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet50
 
-from simsiam import Discriminator
 
 def NT_XentLoss(z1, z2, temperature=0.5):
     z1 = F.normalize(z1, dim=1)
@@ -41,6 +40,37 @@ class projection_MLP(nn.Module):
     def forward(self, x):
         x = self.layer1(x)
         x = self.layer2(x)
+        return x 
+
+############################################################################
+# DRE Formulation
+############################################################################
+class Discriminator(nn.Module):
+    def __init__(self, in_dim=2048, hidden_dim=512):
+        super().__init__()
+        ''' 
+        Discriminator for estimating ratio (joint / marginal)
+        '''
+
+        self.in_dim = in_dim
+        
+        self.fc = nn.Sequential(
+            nn.Linear(in_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim, hidden_dim//2),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim//2, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.fc(x)
+
         return x 
 
 class SimCLR(nn.Module):
