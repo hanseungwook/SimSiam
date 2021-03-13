@@ -109,6 +109,7 @@ class SimCLRJoint(nn.Module):
         self.discriminator = Discriminator(in_dim=proj_dim*2)
 
     def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=1.0):
+        d = self.discriminator
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
 
