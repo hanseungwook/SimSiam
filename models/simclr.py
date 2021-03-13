@@ -112,7 +112,7 @@ class SimCLRJoint(nn.Module):
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
 
-        sym_loss = NT_XentLoss(z1, z2) if sym_loss_weight > 0.0 else 0.0
+        sym_loss = (NT_XentLoss(z1, z2) * sym_loss_weight) if sym_loss_weight > 0.0 else 0.0
 
         if logistic_loss_weight > 0.0:
             real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
