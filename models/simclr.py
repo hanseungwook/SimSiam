@@ -87,7 +87,7 @@ class SimCLR(nn.Module):
 
 
 
-    def forward(self, x1, x2):
+    def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=0.0):
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
 
