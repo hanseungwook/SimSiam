@@ -41,7 +41,7 @@ eval: # linear evaluation, False will turn off automatic evaluation after traini
 
 logger:
   tensorboard: True
-  matplotlib: True
+  matplotlib: False
   
 seed: null # None type for yaml file
 # two things might lead to stochastic behavior other than seed:
