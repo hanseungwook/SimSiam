@@ -25,6 +25,8 @@ train:
   knn_monitor: True # knn monitor will take more time
   knn_interval: 1
   knn_k: 200
+  symmetric_loss_weight: 1.0
+  logistic_loss_weight: 1.0
 eval: # linear evaluation, False will turn off automatic evaluation after training
   optimizer: 
     name: sgd
