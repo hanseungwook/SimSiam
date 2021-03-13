@@ -8,6 +8,8 @@ model:
   name: simclr
   backbone: resnet18_cifar_variant1
 
+load_model: False
+
 train:
   optimizer: 
     name: lars_simclr
