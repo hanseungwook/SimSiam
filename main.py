@@ -94,7 +94,11 @@ def main(device, args):
             loss.backward()
             optimizer.step()
             
-            local_progress.set_postfix({k:v.mean() for k, v in data_dict.items()})
+            # Scheduler step
+            lr_scheduler.step()
+            data_dict.update({'lr':lr_scheduler.get_lr()})
+            
+            local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
             logger.update_scalers(data_dict)
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:
