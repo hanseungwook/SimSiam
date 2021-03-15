@@ -55,7 +55,7 @@ def main(args):
     # if torch.cuda.device_count() > 1: classifier = torch.nn.SyncBatchNorm.convert_sync_batchnorm(classifier)
     classifier = torch.nn.DataParallel(classifier)
     # define optimizer
-    optimizer, _ = get_optimizer(
+    optimizer = get_optimizer(
         args.eval.optimizer.name, classifier, 
         lr=args.eval.base_lr, 
         momentum=args.eval.optimizer.momentum, 
