@@ -92,7 +92,7 @@ class SimCLR(nn.Module):
         z2 = self.encoder(x2)
 
         loss = NT_XentLoss(z1, z2)
-        return {'loss':loss}
+        return {'loss':loss, 'loss_sym': loss}
 
 class SimCLRJoint(nn.Module):
 
