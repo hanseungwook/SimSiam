@@ -60,7 +60,7 @@ def main(device, args):
     # define optimizer
     optimizer = get_optimizer(
         args.train.optimizer.name, model, 
-        lr=args.train.base_lr*args.train.batch_size/256, 
+        lr=args.train.base_lr, 
         momentum=args.train.optimizer.momentum,
         weight_decay=args.train.optimizer.weight_decay)
 

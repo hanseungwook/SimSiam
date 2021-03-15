@@ -1,11 +1,11 @@
-name: simclr-joint-cifar10-experiment
+name: simclr-cifar10-experiment
 dataset: 
   name: cifar10
   image_size: 32
   num_workers: 4
 
 model: 
-  name: simclr_joint
+  name: simclr
   backbone: resnet18_cifar_variant1
 
 load_model: False
@@ -26,7 +26,7 @@ train:
   knn_interval: 1
   knn_k: 200
   symmetric_loss_weight: 1.0
-  logistic_loss_weight: 1.0
+  logistic_loss_weight: 0.0
 eval: # linear evaluation, False will turn off automatic evaluation after training
   optimizer: 
     name: sgd
@@ -41,7 +41,7 @@ eval: # linear evaluation, False will turn off automatic evaluation after traini
 
 logger:
   tensorboard: True
-  matplotlib: True
+  matplotlib: False
   
 seed: null # None type for yaml file
 # two things might lead to stochastic behavior other than seed:
