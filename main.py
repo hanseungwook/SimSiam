@@ -64,13 +64,13 @@ def main(device, args):
         momentum=args.train.optimizer.momentum,
         weight_decay=args.train.optimizer.weight_decay)
 
-    lr_scheduler = LR_Scheduler(
-        optimizer,
-        args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256, 
-        args.train.num_epochs, args.train.base_lr*args.train.batch_size/256, args.train.final_lr*args.train.batch_size/256, 
-        len(train_loader),
-        constant_predictor_lr=True # see the end of section 4.2 predictor
-    )
+    # lr_scheduler = LR_Scheduler(
+    #     optimizer,
+    #     args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256, 
+    #     args.train.num_epochs, args.train.base_lr*args.train.batch_size/256, args.train.final_lr*args.train.batch_size/256, 
+    #     len(train_loader),
+    #     constant_predictor_lr=True # see the end of section 4.2 predictor
+    # )
 
     logger = Logger(tensorboard=args.logger.tensorboard, matplotlib=args.logger.matplotlib, log_dir=args.log_dir)
     best_accuracy = 0.0
@@ -95,8 +95,8 @@ def main(device, args):
             optimizer.step()
             
             # Scheduler step
-            lr_scheduler.step()
-            data_dict.update({'lr':lr_scheduler.get_lr()})
+            # lr_scheduler.step()
+            # data_dict.update({'lr':lr_scheduler.get_lr()})
             
             local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
             logger.update_scalers(data_dict)
