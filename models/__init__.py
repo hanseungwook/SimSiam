@@ -48,7 +48,7 @@ def get_model(model_cfg):
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers) 
     elif model_cfg.name == 'simsiam_joint':
-        model =  SimSiamJoint(get_backbone(model_cfg.backbone))
+        model =  SimSiamJoint(get_backbone(model_cfg.backbone), proj_dim=model_cfg.proj_dim)
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers) 
     elif model_cfg.name == 'byol':

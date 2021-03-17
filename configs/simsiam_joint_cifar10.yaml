@@ -8,18 +8,19 @@ model:
   name: simsiam_joint
   backbone: resnet18_cifar_variant1
   proj_layers: 2
+  proj_dim: 2048
 
 load_model: False
 
 train:
   optimizer: 
-    name: adam
-    weight_decay: 0.0
+    name: sgd
+    weight_decay: 0.0005
     momentum: 0.9
-  # warmup_epochs: 10
-  # warmup_lr: 0
-  base_lr: 0.0005
-  # final_lr: 0
+  warmup_epochs: 10
+  warmup_lr: 0
+  base_lr: 0.03
+  final_lr: 0
   num_epochs: 800 # this parameter influence the lr decay
   stop_at_epoch: 800 # has to be smaller than num_epochs
   batch_size: 512
@@ -27,7 +28,7 @@ train:
   knn_interval: 1
   knn_k: 200
   symmetric_loss_weight: 1.0
-  logistic_loss_weight: 10.0
+  logistic_loss_weight: 1.0
 eval: # linear evaluation, False will turn off automatic evaluation after training
   optimizer: 
     name: sgd
@@ -38,7 +39,7 @@ eval: # linear evaluation, False will turn off automatic evaluation after traini
   base_lr: 30
   final_lr: 0
   batch_size: 256
-  num_epochs: 200
+  num_epochs: 100
 
 logger:
   tensorboard: True
