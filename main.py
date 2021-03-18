@@ -58,7 +58,7 @@ def main(device, args):
     model = torch.nn.DataParallel(model)
 
     # define optimizer
-    optimizer = get_optimizer(
+    optimizer, optimizer_e = get_optimizer(
         args.train.optimizer.name, model, 
         lr=args.train.base_lr, 
         momentum=args.train.optimizer.momentum,
@@ -75,7 +75,6 @@ def main(device, args):
     logger = Logger(tensorboard=args.logger.tensorboard, matplotlib=args.logger.matplotlib, log_dir=args.log_dir)
     best_accuracy = 0.0
     accuracy = 0
-    only_disc = False
 
     # Start training
     global_progress = tqdm(range(0, args.train.stop_at_epoch), desc=f'Training')
@@ -87,12 +86,22 @@ def main(device, args):
             images1 = images[0].to(device, non_blocking=True)
             images2 = images[1].to(device, non_blocking=True)
 
-            # Optimizer step
+            # Step 1: MI Estimation
             optimizer.zero_grad()
-            data_dict = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight)
-            loss = data_dict['loss'].mean() # ddp
+            data_dict = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight, est=True)
+            loss = data_dict['loss_d'].mean() # ddp
             loss.backward()
             optimizer.step()
+
+            # Step 2: MI Maximization
+            optimizer_e.zero_grad()
+            data_dict_m = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight, est=False)
+            loss = data_dict_m['loss_m'].mean()
+            loss.backward()
+            optimizer_e.step()
+
+            # Update data_dict
+            data_dict.update(data_dict_m)
             
             # Scheduler step
             # lr_scheduler.step()
@@ -115,7 +124,7 @@ def main(device, args):
                 }, model_path)
 
             if (epoch+1) % 10 == 0:
-                model_path = os.path.join(args.ckpt_dir, f"{args.name}_latest.pth")
+                model_path = os.path.join(args.ckpt_dir, f"{args.name}_{epoch+1}.pth")
                 torch.save({
                     'epoch': epoch+1,
                     'state_dict':model.module.state_dict()

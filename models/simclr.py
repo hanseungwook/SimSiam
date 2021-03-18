@@ -108,12 +108,18 @@ class SimCLRJoint(nn.Module):
 
         self.discriminator = Discriminator(in_dim=proj_dim*2)
 
-    def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=1.0):
+    def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=1.0, est=False):
+        # MI Estimation
+        if est:
+            self.forward_est(x1, x2, logistic_loss_weight)
+        # MI Maximization
+        else:
+            self.forward_max(x1, x2, sym_loss_weight)
+
+    def forward_est(self, x1, x2, logistic_loss_weight=1.0):
         d = self.discriminator
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
-
-        sym_loss = (NT_XentLoss(z1, z2) * sym_loss_weight) if sym_loss_weight > 0.0 else 0.0
 
         if logistic_loss_weight > 0.0:
             real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
@@ -126,17 +132,21 @@ class SimCLRJoint(nn.Module):
             fake_loss = F.binary_cross_entropy(fake_outputs, fake)
 
             d_loss = ((real_loss + fake_loss) / 2 * logistic_loss_weight) if logistic_loss_weight > 0.0 else 0.0
-        
-        # No symmetric loss
-        if sym_loss_weight <= 0.0:
-            return {'loss': d_loss, 'loss_d': d_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
-        # No logistic loss
-        elif logistic_loss_weight <= 0.0:
-            return {'loss': sym_loss, 'loss_sym': sym_loss}
-        # Both symmetric and logistic loss present
         else:
-            return {'loss': sym_loss + d_loss, 'loss_sym': sym_loss, 'loss_d': d_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
+            raise Exception('Logistic loss weight undefined for forward pass for MI estimation')
+        
+        return {'loss_d': d_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
+    
+    def forward_max(x1, x2, sym_loss_weight=1.0):
+        d = self.discriminator
+        z1 = self.encoder(x1)
+        z2 = self.encoder(x2)
 
+        sym_loss = (NT_XentLoss(z1, z2) * sym_loss_weight) if sym_loss_weight > 0.0 else 0.0
+        mi_loss = -1.0 * d(torch.cat((z1, z2), dim=-1))
+
+        return {'loss_m': sym_loss + mi_loss, 'loss_sym': sym_loss, 'loss_mi': mi_loss}
+        
 
 
 
