@@ -19,6 +19,8 @@ train:
   # warmup_lr: 0
   base_lr: 0.001
   # final_lr: 0
+  pretrain_epochs: 1
+  max_step_int: 3 # Interval in number of iterations in which to perform MI maximization step (every X steps)
   num_epochs: 800 # this parameter influence the lr decay
   stop_at_epoch: 800 # has to be smaller than num_epochs
   batch_size: 512

@@ -58,7 +58,7 @@ def main(device, args):
     model = torch.nn.DataParallel(model)
 
     # define optimizer
-    optimizer, optimizer_e = get_optimizer(
+    optimizer, optimizer_e, optimizer_d = get_optimizer(
         args.train.optimizer.name, model, 
         lr=args.train.base_lr, 
         momentum=args.train.optimizer.momentum,
@@ -75,40 +75,58 @@ def main(device, args):
     logger = Logger(tensorboard=args.logger.tensorboard, matplotlib=args.logger.matplotlib, log_dir=args.log_dir)
     best_accuracy = 0.0
     accuracy = 0
+    pretrain = False
 
     # Start training
     global_progress = tqdm(range(0, args.train.stop_at_epoch), desc=f'Training')
     for epoch in global_progress:
         model.train()      
+
+        if epoch < args.train.pretrain_epochs:
+            pretrain = True
+        else:
+            pretrain = False
         
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{args.train.num_epochs}', disable=args.hide_progress)
         for idx, (images, labels) in enumerate(local_progress):
             images1 = images[0].to(device, non_blocking=True)
             images2 = images[1].to(device, non_blocking=True)
 
-            # Step 1: MI Estimation
-            optimizer.zero_grad()
-            data_dict = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight, est=True)
-            loss = data_dict['loss_d'].mean() # ddp
-            loss.backward()
-            optimizer.step()
+            # Pretrain both f + d with NT-Xent loss + MI estimation loss
+            if pretrain:
+                optimizer.zero_grad()
+                data_dict = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight, est=True)
+                loss = data_dict['loss_est'].mean()
+                loss.backward()
+                optimizer.step()
 
-            # Step 2: MI Maximization
-            optimizer_e.zero_grad()
-            data_dict_m = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight, est=False)
-            loss = data_dict_m['loss_m'].mean()
-            loss.backward()
-            optimizer_e.step()
+                local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
+                logger.update_scalers(data_dict)
+            
+            else:
+                # Discriminator step: MI Estimation
+                optimizer_d.zero_grad()
+                data_dict_d = model.forward(images1, images2, sym_loss_weight=0.0, logistic_loss_weight=args.train.logistic_loss_weight, est=True)
+                loss = data_dict_d['loss_est/total'].mean()
+                loss.backward()
+                optimizer_d.step()
 
-            # Update data_dict
-            data_dict.update(data_dict_m)
+                # Encoder step: MI Maximization
+                if idx % args.train.max_step_int == 0:
+                    optimizer_e.zero_grad()
+                    data_dict_e = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight, est=False)
+                    loss = data_dict_e['loss_m/total'].mean()
+                    loss.backward()
+                    optimizer_e.step()
+
+                    data_dict_d.update(data_dict_e)
             
             # Scheduler step
             # lr_scheduler.step()
             # data_dict.update({'lr':lr_scheduler.get_lr()})
             
-            local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
-            logger.update_scalers(data_dict)
+                local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict_d.items()})
+                logger.update_scalers(data_dict_d)
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:
             backbone = model.module.backbone_s if (args.model.name == 'simsiam_kd' or args.model.name == 'simsiam_kd_anchor') else model.module.backbone
@@ -118,6 +136,14 @@ def main(device, args):
             if accuracy > best_accuracy:
                 best_accuracy = accuracy
                 model_path = os.path.join(args.ckpt_dir, f"{args.name}_best.pth")
+                torch.save({
+                    'epoch': epoch+1,
+                    'state_dict':model.module.state_dict()
+                }, model_path)
+
+            # Save after pretrain
+            if (epoch+1) == args.train.pretrain_epochs:
+                model_path = os.path.join(args.ckpt_dir, f"{args.name}_{epoch+1}_pretrain.pth")
                 torch.save({
                     'epoch': epoch+1,
                     'state_dict':model.module.state_dict()

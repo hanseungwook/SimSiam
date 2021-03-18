@@ -97,6 +97,7 @@ If you find this repo helpful, please consider star so that I have the motivatio
 `joint`: Discrimator and encoder are treated as an end-to-end model estimating the ratio of joint / marginal (with symmetric loss added at z-level) \
 `joint-simclr`: SimCLR's NT-Xent loss + MI loss via discriminator with Adam optimization dynamics merged in\
 `joint-simclr-iter`: Step 1 (MI Estimation with respect to f + D) and Step 2 (SimCLR's NT-Xent loss + MI maximization with respect to f) \
+`joint-simclr-iter-sep`: Pre-train with NT-Xent loss + MI estimation loss with respect to f + D for an epoch, and then separate 3 steps of estimation and 1 step of maximization with respect to discriminator and encoder respectively. \
 `archive/joint-simclr-adam`: SimCLR's NT-Xent loss + MI loss via discriminator with Adam optimization dynamics (before being merged into `joint-simclr`)\
 `e2e-baseline`: End-to-end model only estimating the ratio (two versions, in which the two distributions are created at x and z-levels) \
 
