@@ -145,7 +145,7 @@ class SimCLRJoint(nn.Module):
         else:
             return {'loss_est/total': sym_loss + d_loss, 'loss_est/loss_sym': sym_loss, 'loss_est/loss_d': d_loss, 'loss_est/loss_d_real': real_loss, 'loss_est/loss_d_fake': fake_loss}
     
-    def forward_max(x1, x2, sym_loss_weight=1.0):
+    def forward_max(self, x1, x2, sym_loss_weight=1.0):
         d = self.discriminator
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
