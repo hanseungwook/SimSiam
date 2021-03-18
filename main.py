@@ -96,7 +96,7 @@ def main(device, args):
             if pretrain:
                 optimizer.zero_grad()
                 data_dict = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight, est=True)
-                loss = data_dict['loss_est'].mean()
+                loss = data_dict['loss_est/total'].mean()
                 loss.backward()
                 optimizer.step()
 
