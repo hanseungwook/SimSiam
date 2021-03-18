@@ -111,10 +111,10 @@ class SimCLRJoint(nn.Module):
     def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=1.0, est=False):
         # MI Estimation
         if est:
-            self.forward_est(x1, x2, logistic_loss_weight)
+            return self.forward_est(x1, x2, logistic_loss_weight)
         # MI Maximization
         else:
-            self.forward_max(x1, x2, sym_loss_weight)
+            return self.forward_max(x1, x2, sym_loss_weight)
 
     def forward_est(self, x1, x2, logistic_loss_weight=1.0):
         d = self.discriminator
