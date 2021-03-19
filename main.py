@@ -46,12 +46,14 @@ def main(device, args):
 
     # Define model
     model = get_model(args.model)
+    start_epoch = 0
 
     # Load model
     if args.load_model:
         print('Loading model', file=sys.stderr)
         checkpoint = torch.load(args.load_model.weights_path, map_location='cpu')
         model.load_state_dict(checkpoint['state_dict'])
+        start_epoch = int(args.load_model.start_epoch)
 
     # Move to device and DP
     model = model.to(device)
@@ -77,7 +79,7 @@ def main(device, args):
     accuracy = 0
 
     # Start training
-    global_progress = tqdm(range(0, args.train.stop_at_epoch), desc=f'Training')
+    global_progress = tqdm(range(start_epoch, args.train.stop_at_epoch), desc=f'Training')
     for epoch in global_progress:
         model.train()      
         
