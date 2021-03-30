@@ -27,7 +27,7 @@ def get_optimizer(name, model, lr, momentum, weight_decay, lr_d):
     elif name == 'adam':
         optimizer = torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay)
     elif name == 'lars_simclr': # Careful
-        optimizer = LARS_simclr(model.encoder.named_modules(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+        optimizer = LARS_simclr(model.module.encoder.named_modules(), lr=lr, momentum=momentum, weight_decay=weight_decay)
     elif name == 'larc':
         optimizer = LARC(
             torch.optim.SGD(
