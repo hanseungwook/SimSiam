@@ -5,7 +5,7 @@ dataset:
   num_workers: 4
 
 model: 
-  name: simclr
+  name: simclr_mi
   backbone: resnet18_cifar_variant1
   proj_dim: 128
 
