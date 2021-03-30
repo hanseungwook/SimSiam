@@ -114,7 +114,7 @@ def main(device, args):
 
             # Discriminator loss step
             optimizer_d.zero_grad()
-            data_dict = model.forward_d(images1, images2)
+            data_dict = model.forward(images1, images2, disc=True)
             loss = data_dict['loss_d/total'].mean() # ddp
             loss.backward()
             optimizer_d.step()

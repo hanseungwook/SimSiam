@@ -309,8 +309,9 @@ class SimSiamMI(nn.Module):
 
         self.discriminator = Discriminator(in_dim=proj_dim*2)
     
-    def forward(self, x1, x2):
-
+    def forward(self, x1, x2, disc=False):
+        if disc:
+            return self.forward_d(x1, x2)
         f, h = self.encoder, self.predictor
         z1, z2 = f(x1), f(x2)
         p1, p2 = h(z1), h(z2)

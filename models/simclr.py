@@ -108,7 +108,10 @@ class SimCLRMI(nn.Module):
 
         self.discriminator = Discriminator(in_dim=proj_dim*2)
 
-    def forward(self, x1, x2):
+    def forward(self, x1, x2, disc=False):
+        if disc:
+            return self.forward_d(x1, x2)
+        
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
 
