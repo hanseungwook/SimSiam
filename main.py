@@ -104,7 +104,7 @@ def main(device, args):
             local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
             logger.update_scalers(data_dict)
         
-        model.encoder.eval()
+        model.module.encoder.eval()
 
         # Train discriminator every epoch
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch} D/{start_epoch+args.train.num_epochs}', disable=args.hide_progress)
