@@ -40,7 +40,7 @@ echo ""
 echo " Run started at:- "
 date
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --data_dir ../data/ --log_dir ./logs/simclr_mi_cifar10/ -c configs/simclr_mi_cifar.yaml --ckpt_dir ./experiments/simclr_mi_cifar10/
+CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --data_dir ../data/ --log_dir ./logs/simclr_mi_cifar10/ -c configs/simclr_mi_cifar10.yaml --ckpt_dir ./experiments/simclr_mi_cifar10/
 
 echo "Run completed at:- "
 date
