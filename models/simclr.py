@@ -94,6 +94,47 @@ class SimCLR(nn.Module):
         loss = NT_XentLoss(z1, z2)
         return {'loss':loss, 'loss_sym': loss}
 
+# Original SimCLR model with a discriminator added for only estimating MI (no gradients)
+class SimCLRMI(nn.Module):
+    def __init__(self, backbone=resnet50(), proj_dim=128):
+        super().__init__()
+        
+        self.backbone = backbone
+        self.projector = projection_MLP(backbone.output_dim, out_dim=proj_dim)
+        self.encoder = nn.Sequential(
+            self.backbone,
+            self.projector
+        )
+
+        self.discriminator = Discriminator(in_dim=proj_dim*2)
+
+    def forward(self, x1, x2):
+        z1 = self.encoder(x1)
+        z2 = self.encoder(x2)
+
+        loss = NT_XentLoss(z1, z2)
+        return {'loss':loss, 'loss_sym': loss}   
+    
+    def forward_d(self, x1, x2):
+        d = self.discriminator
+        z1 = self.encoder(x1)
+        z2 = self.encoder(x2)
+
+        real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+        fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+
+        real_outputs = d(torch.cat((z1, z2), dim=-1))
+        fake_outputs = d(torch.cat((z1[torch.randperm(z1.size()[0])], z2[torch.randperm(z2.size()[0])]), dim=-1))
+        
+        real_loss = F.binary_cross_entropy(real_outputs, real)
+        fake_loss = F.binary_cross_entropy(fake_outputs, fake)
+
+        d_loss = (real_loss + fake_loss) / 2
+
+        mi = -1.0 * real_outputs
+        
+        return {'loss_d/total': d_loss, 'loss_d/real': real_loss, 'loss_d/fake': fake_loss, 'loss_d/mi': mi}
+
 class SimCLRJoint(nn.Module):
 
     def __init__(self, backbone=resnet50(), proj_dim=128):

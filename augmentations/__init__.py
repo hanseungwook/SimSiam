@@ -24,13 +24,13 @@ def get_aug(dataset, name='simsiam', image_size=224, train=True, train_classifie
     image_size, norm = dataset_img_size_dict[dataset], dataset_norm_dict[dataset]
 
     if train==True:
-        if name == 'simsiam' or name == 'simsiam_kd' or name == 'simsiam_adv' or name == 'simsiam_joint':
+        if name == 'simsiam' or name == 'simsiam_kd' or name == 'simsiam_adv' or name == 'simsiam_joint' or name =='simsiam_disc':
             augmentation = SimSiamTransform(image_size, mean_std=norm)
         elif name == 'simsiam_kd_anchor':
             augmentation = SimSiamTransform(image_size, mean_std=norm, anchor=True)
         elif name == 'byol':
             augmentation = BYOL_transform(image_size, mean_std=norm)
-        elif name == 'simclr' or 'simclr_joint':
+        elif name == 'simclr' or name == 'simclr_joint' or name =='simclr_disc':
             augmentation = SimCLRTransform(image_size, mean_std=norm)
         else:
             raise NotImplementedError

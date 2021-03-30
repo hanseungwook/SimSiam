@@ -60,19 +60,20 @@ def main(device, args):
     model = torch.nn.DataParallel(model)
 
     # define optimizer
-    optimizer, optimizer_e = get_optimizer(
+    optimizer, optimizer_d = get_optimizer(
         args.train.optimizer.name, model, 
         lr=args.train.base_lr, 
         momentum=args.train.optimizer.momentum,
-        weight_decay=args.train.optimizer.weight_decay)
+        weight_decay=args.train.optimizer.weight_decay,
+        lr_d=args.train.disc_lr)
 
-    # lr_scheduler = LR_Scheduler(
-    #     optimizer,
-    #     args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256, 
-    #     args.train.num_epochs, args.train.base_lr*args.train.batch_size/256, args.train.final_lr*args.train.batch_size/256, 
-    #     len(train_loader),
-    #     constant_predictor_lr=True # see the end of section 4.2 predictor
-    # )
+    lr_scheduler = LR_Scheduler(
+        optimizer,
+        args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256, 
+        args.train.num_epochs, args.train.base_lr*args.train.batch_size/256, args.train.final_lr*args.train.batch_size/256, 
+        len(train_loader),
+        constant_predictor_lr=True # see the end of section 4.2 predictor
+    )
 
     logger = Logger(tensorboard=args.logger.tensorboard, matplotlib=args.logger.matplotlib, log_dir=args.log_dir)
     best_accuracy = 0.0
@@ -83,34 +84,44 @@ def main(device, args):
     for epoch in global_progress:
         model.train()      
         
+        # Train model
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{start_epoch+args.train.num_epochs}', disable=args.hide_progress)
         for idx, (images, labels) in enumerate(local_progress):
             images1 = images[0].to(device, non_blocking=True)
             images2 = images[1].to(device, non_blocking=True)
 
-            # Step 1: MI Estimation
+            # Original loss step
             optimizer.zero_grad()
-            data_dict = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight, est=True)
-            loss = data_dict['loss_d'].mean() # ddp
+            data_dict = model.forward(images1, images2)
+            loss = data_dict['loss'].mean() # ddp
             loss.backward()
             optimizer.step()
-
-            # Step 2: MI Maximization
-            optimizer_e.zero_grad()
-            data_dict_m = model.forward(images1, images2, sym_loss_weight=args.train.symmetric_loss_weight, logistic_loss_weight=args.train.logistic_loss_weight, est=False)
-            loss = data_dict_m['loss_m'].mean()
-            loss.backward()
-            optimizer_e.step()
-
-            # Update data_dict
-            data_dict.update(data_dict_m)
             
             # Scheduler step
-            # lr_scheduler.step()
-            # data_dict.update({'lr':lr_scheduler.get_lr()})
+            lr_scheduler.step()
+            data_dict.update({'lr':lr_scheduler.get_lr()})
             
             local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
             logger.update_scalers(data_dict)
+        
+        model.encoder.eval()
+
+        # Train discriminator every epoch
+        local_progress=tqdm(train_loader, desc=f'Epoch {epoch} D/{start_epoch+args.train.num_epochs}', disable=args.hide_progress)
+        for idx, (images, labels) in enumerate(local_progress):
+            images1 = images[0].to(device, non_blocking=True)
+            images2 = images[1].to(device, non_blocking=True)
+
+            # Discriminator loss step
+            optimizer_d.zero_grad()
+            data_dict = model.forward(images1, images2)
+            loss = data_dict['loss_d/total'].mean() # ddp
+            loss.backward()
+            optimizer_d.step()
+            
+            local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
+            logger.update_scalers(data_dict)
+
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:
             backbone = model.module.backbone_s if (args.model.name == 'simsiam_kd' or args.model.name == 'simsiam_kd_anchor') else model.module.backbone
@@ -125,12 +136,12 @@ def main(device, args):
                     'state_dict':model.module.state_dict()
                 }, model_path)
 
-            if (epoch+1) % 10 == 0:
-                model_path = os.path.join(args.ckpt_dir, f"{args.name}_{epoch+1}.pth")
-                torch.save({
-                    'epoch': epoch+1,
-                    'state_dict':model.module.state_dict()
-                }, model_path)
+            # if (epoch+1) % 10 == 0:
+            #     model_path = os.path.join(args.ckpt_dir, f"{args.name}_{epoch+1}.pth")
+            #     torch.save({
+            #         'epoch': epoch+1,
+            #         'state_dict':model.module.state_dict()
+            #     }, model_path)
         
         epoch_dict = {"epoch":epoch, "accuracy":accuracy}
         global_progress.set_postfix(epoch_dict)

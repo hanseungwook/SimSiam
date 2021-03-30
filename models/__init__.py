@@ -1,6 +1,6 @@
-from .simsiam import SimSiam, SimSiamKD, SimSiamKDAnchor, SimSiamAdv, SimSiamJoint
+from .simsiam import SimSiam, SimSiamKD, SimSiamKDAnchor, SimSiamAdv, SimSiamJoint, SimSiamMI
 from .byol import BYOL
-from .simclr import SimCLR, SimCLRJoint
+from .simclr import SimCLR, SimCLRJoint, SimCLRMI
 from torchvision.models import resnet50, resnet18
 import torch
 from .backbones import *
@@ -51,10 +51,16 @@ def get_model(model_cfg):
         model =  SimSiamJoint(get_backbone(model_cfg.backbone))
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers) 
+    elif model_cfg.name == 'simsiam_mi':
+        model =  SimSiamMI(get_backbone(model_cfg.backbone), model_cfg.proj_dim)
+        if model_cfg.proj_layers is not None:
+            model.projector.set_layers(model_cfg.proj_layers) 
     elif model_cfg.name == 'byol':
         model = BYOL(get_backbone(model_cfg.backbone))
     elif model_cfg.name == 'simclr':
         model = SimCLR(get_backbone(model_cfg.backbone))
+    elif model_cfg.name == 'simclr_mi':
+        model = SimCLRMI(get_backbone(model_cfg.backbone), model_cfg.proj_dim)
     elif model_cfg.name == 'simclr_joint':
         model = SimCLRJoint(get_backbone(model_cfg.backbone))
     elif model_cfg.name == 'swav':

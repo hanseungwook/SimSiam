@@ -293,6 +293,49 @@ class SimSiamJoint(nn.Module):
         else:
             return {'loss': sym_loss + d_loss, 'loss_sym': sym_loss, 'loss_d': d_loss, 'loss_d_real': real_loss, 'loss_d_fake': fake_loss}
 
+# Original SimSiam + Discriminator at z level
+class SimSiamMI(nn.Module):
+    def __init__(self, backbone=resnet50(), proj_dim=2048):
+        super().__init__()
+        
+        self.backbone = backbone
+        self.projector = projection_MLP(backbone.output_dim, out_dim=proj_dim)
+
+        self.encoder = nn.Sequential( # f encoder
+            self.backbone,
+            self.projector
+        )
+        self.predictor = prediction_MLP()
+
+        self.discriminator = Discriminator(in_dim=proj_dim*2)
+    
+    def forward(self, x1, x2):
+
+        f, h = self.encoder, self.predictor
+        z1, z2 = f(x1), f(x2)
+        p1, p2 = h(z1), h(z2)
+        L = D(p1, z2) / 2 + D(p2, z1) / 2
+        return {'loss': L, 'loss_sym': L}
+    
+    def forward_d(self, x1, x2):
+        f, d = self.encoder, self.discriminator
+        z1, z2 = f(x1), f(x2)
+        
+        real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+        fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+
+        real_outputs = d(torch.cat((z1, z2), dim=-1))
+        fake_outputs = d(torch.cat((z1[torch.randperm(z1.size()[0])], z2[torch.randperm(z2.size()[0])]), dim=-1))
+        
+        real_loss = F.binary_cross_entropy(real_outputs, real)
+        fake_loss = F.binary_cross_entropy(fake_outputs, fake)
+
+        d_loss = (real_loss + fake_loss) / 2
+
+        mi = -1.0 * real_outputs
+        
+        return {'loss_d/total': d_loss, 'loss_d/real': real_loss, 'loss_d/fake': fake_loss, 'loss_d/mi': mi}
+
 if __name__ == "__main__":
     model = SimSiam()
     x1 = torch.randn((2, 3, 224, 224))
