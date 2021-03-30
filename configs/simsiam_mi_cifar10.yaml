@@ -5,7 +5,7 @@ dataset:
   num_workers: 4
 
 model: 
-  name: simsiam_disc
+  name: simsiam_mi
   backbone: resnet18_cifar_variant1
   proj_layers: 2
   proj_dim: 2048
