@@ -107,14 +107,14 @@ def main(device, args):
         model.module.encoder.eval()
 
         # Train discriminator every epoch
-        local_progress=tqdm(train_loader, desc=f'Epoch {epoch} D/{start_epoch+args.train.num_epochs}', disable=args.hide_progress)
+        local_progress=tqdm(train_loader, desc=f'D Epoch {epoch}/{start_epoch+args.train.num_epochs}', disable=args.hide_progress)
         for idx, (images, labels) in enumerate(local_progress):
             images1 = images[0].to(device, non_blocking=True)
             images2 = images[1].to(device, non_blocking=True)
 
             # Discriminator loss step
             optimizer_d.zero_grad()
-            data_dict = model.forward(images1, images2)
+            data_dict = model.forward_d(images1, images2)
             loss = data_dict['loss_d/total'].mean() # ddp
             loss.backward()
             optimizer_d.step()
