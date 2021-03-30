@@ -14,13 +14,13 @@ load_model: False
 
 train:
   optimizer: 
-    name: sgd
-    weight_decay: 0.0005
-    momentum: 0.9
-  warmup_epochs: 10
-  warmup_lr: 0
-  base_lr: 0.03
-  final_lr: 0
+    name: adam
+    weight_decay: 0.0
+    momentum: 0.0
+  # warmup_epochs: 10
+  # warmup_lr: 0
+  base_lr: 0.001
+  # final_lr: 0
   disc_lr: 0.001
   num_epochs: 800 # this parameter influence the lr decay
   stop_at_epoch: 800 # has to be smaller than num_epochs
