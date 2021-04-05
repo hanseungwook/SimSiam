@@ -87,9 +87,7 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
         # A heuristic is to use the median of pairwise distances as σ, suggested by Sugiyama's book
         # TODO: Ask about this sigma
         sigma = torch.sqrt(
-            torch.median(
-                torch.cat([dsq_dede.squeeze(), dsq_denu.squeeze(), dsq_nunu.squeeze()], 1)
-            )
+            torch.median(dsq_all)
         ).item()
 
         σs.append(sigma)
