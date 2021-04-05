@@ -60,12 +60,11 @@ def main(device, args):
     model = torch.nn.DataParallel(model)
 
     # define optimizer
-    optimizer, optimizer_d = get_optimizer(
+    optimizer = get_optimizer(
         args.train.optimizer.name, model, 
         lr=args.train.base_lr, 
         momentum=args.train.optimizer.momentum,
-        weight_decay=args.train.optimizer.weight_decay,
-        lr_d=args.train.disc_lr)
+        weight_decay=args.train.optimizer.weight_decay)
 
     # lr_scheduler = LR_Scheduler(
     #     optimizer,
@@ -100,24 +99,6 @@ def main(device, args):
             # Scheduler step
             # lr_scheduler.step()
             # data_dict.update({'lr':lr_scheduler.get_lr()})
-            
-            local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
-            logger.update_scalers(data_dict)
-        
-        model.module.encoder.eval()
-
-        # Train discriminator every epoch
-        local_progress=tqdm(train_loader, desc=f'D Epoch {epoch}/{start_epoch+args.train.num_epochs}', disable=args.hide_progress)
-        for idx, (images, labels) in enumerate(local_progress):
-            images1 = images[0].to(device, non_blocking=True)
-            images2 = images[1].to(device, non_blocking=True)
-
-            # Discriminator loss step
-            optimizer_d.zero_grad()
-            data_dict = model.forward(images1, images2, disc=True)
-            loss = data_dict['loss_d/total'].mean() # ddp
-            loss.backward()
-            optimizer_d.step()
             
             local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
             logger.update_scalers(data_dict)

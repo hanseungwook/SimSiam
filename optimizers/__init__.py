@@ -14,12 +14,6 @@ def get_optimizer(name, model, lr, momentum, weight_decay, lr_d):
         'lr': lr
     }]
 
-    parameters_d = [{
-        'name': 'discriminator',
-        'params': [param for name, param in model.named_parameters() if name.startswith(predictor_prefix)],
-        'lr': lr
-    }]
-
     if name == 'lars':
         optimizer = LARS(parameters, lr=lr, momentum=momentum, weight_decay=weight_decay)
     elif name == 'sgd':
@@ -41,10 +35,8 @@ def get_optimizer(name, model, lr, momentum, weight_decay, lr_d):
         )
     else:
         raise NotImplementedError
-    
-    optimizer_d = torch.optim.Adam(parameters_d, lr=lr_d)
 
-    return optimizer, optimizer_d
+    return optimizer
 
 
 
