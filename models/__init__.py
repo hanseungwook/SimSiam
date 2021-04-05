@@ -64,7 +64,7 @@ def get_model(model_cfg):
     elif model_cfg.name == 'simclr_joint':
         model = SimCLRJoint(get_backbone(model_cfg.backbone))
     elif model_cfg.name == 'simclr_gram':
-        model = SimCLRGram(get_backbone(model_cfg.backbone))
+        model = SimCLRGram(get_backbone(model_cfg.backbone), model_cfg.proj_dim)
     elif model_cfg.name == 'swav':
         raise NotImplementedError
     else:

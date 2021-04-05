@@ -7,6 +7,7 @@ dataset:
 model: 
   name: simclr_gram
   backbone: resnet18_cifar_variant1
+  proj_dim: 128
 
 load_model: False
 
