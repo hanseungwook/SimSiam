@@ -108,7 +108,8 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
         ratio += kmm_ratios(Kdede, Kdenu, eps_ratio, version='efficient')
     
     ratio = ratio / len(σs)
-    ratio = torch.relu(ratio) if clip_ratio else ratio
+    # ratio = torch.relu(ratio) if clip_ratio else ratio # Clip ratio on the upper-bound 
+    ratio = torch.clip(ratio, min=0, max=1e15)
     
     # mmd = torch.sqrt(torch.relu(mmdsq))
 
