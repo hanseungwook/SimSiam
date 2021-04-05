@@ -66,7 +66,7 @@ def kmm_ratios(Kdede, Kdenu, eps_ratio=0.0, version='original'):
         B = Kdenu
 
         # 2 / (2 * (N - 1)) == 1 / (N - 1), where N is the number of images
-        return (1 / n_de) * (torch.matmul(B, torch.ones(B.shape[1], device=B.device)) / A)
+        return (1 / (n_de-1)) * (torch.matmul(B, torch.ones(B.shape[1], device=B.device)) / A)
 
 def mmd_loss(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False, version='original'):
     # Note that original & efficient versions assume different z1, z2 distributions, so be careful
