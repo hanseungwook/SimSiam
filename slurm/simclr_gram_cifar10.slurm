@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH -J simclr_cifar10
-#SBATCH -o simclr_cifar10_%j.out
-#SBATCH -e simclr_cifar10_%j.err
+#SBATCH -J simclr_gram_cifar10
+#SBATCH -o simclr_gram_cifar10_%j.out
+#SBATCH -e simclr_gram_cifar10_%j.err
 #SBATCH --mail-user=swhan@mit.edu
 #SBATCH --mail-type=ALL
 #SBATCH --gres=gpu:4
@@ -40,7 +40,7 @@ echo ""
 echo " Run started at:- "
 date
 
-CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --data_dir ../data/ --log_dir ./logs/simclr_cifar10/ -c configs/simclr_cifar.yaml --ckpt_dir ./experiments/simclr_cifar10/
+CUDA_VISIBLE_DEVICES=0,1,2,3 python main.py --data_dir ../data/ --log_dir ./logs/simclr_gram_cifar10/ -c configs/simclr_gram_cifar10.yaml --ckpt_dir ./experiments/simclr_gram_cifar10/
 
 echo "Run completed at:- "
 date
