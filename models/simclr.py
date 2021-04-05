@@ -27,6 +27,133 @@ def NT_XentLoss(z1, z2, temperature=0.5):
     loss = F.cross_entropy(logits, labels, reduction='sum')
     return loss / (2 * N)
 
+############################################################################
+# GramNet Ratio Loss & Utilies
+############################################################################
+
+# Returns euclidean distance squared
+def euclidsq(x, y):
+    return torch.pow(torch.cdist(x, y), 2)
+
+# Returns gaussian kernel calculation
+def gaussian_gramian(esq, σ):
+    return torch.exp(torch.div(-esq, 2 * σ**2))
+    
+# Returns euclidean distances for denom & numerator
+def get_esq(x_de, x_nu):
+    return euclidsq(x_de, x_de), euclidsq(x_de, x_nu), euclidsq(x_nu, x_nu)
+
+def kmm_ratios(Kdede, Kdenu, eps_ratio=0.0, version='original'):
+    if version == 'original':
+        n_de, n_nu = Kdenu.shape
+        if eps_ratio > 0:
+            A = Kdede + eps_ratio * torch.eye(n_de).to(Kdede.device)
+        else:
+            A = Kdede
+        B = Kdenu
+
+        # return torch.matmul(torch.matmul(torch.inverse(A), B), torch.ones(n_nu, 1).to(Kdede.device))
+        return (n_de / n_nu) * torch.matmul(B/A[0][0], torch.ones(n_nu, 1).to(Kdede.device))
+    elif version == 'efficient':
+        n_de, n_nu = Kdenu.shape
+        n_nu -= 2 # Subtracting the q => q items in counting for n_nu
+        
+        if eps_ratio > 0:
+            A = Kdede + eps_ratio * torch.ones(n_de).to(Kdede.device)
+        else:
+            A = Kdede
+        
+        B = Kdenu
+
+        # 2 / (2 * (N - 1)) == 1 / (N - 1), where N is the number of images
+        return (1 / n_de) * (torch.matmul(B, torch.ones(B.shape[1])) / A)
+
+def mmd_loss(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False, version='original'):
+    # Note that original & efficient versions assume different z1, z2 distributions, so be careful
+    if version == 'original':
+        return mmd_loss_original(z1, z2, σs, eps_ratio, clip_ratio)
+    elif version == 'efficient':
+        return mmd_loss_efficient(z1, z2, σs, eps_ratio, clip_ratio)
+
+# Efficient version of gramnet ratio loss that performs all calculations at once
+# and then re-arranges for calculating the ratio
+def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
+    # Assuming z1, z2 are transformed views of x (N, dim_z)
+
+    dsq_all = euclidsq(x1, x2)
+
+    # Creating list of sigmas, if not defined
+    if len(σs) == 0:
+        # A heuristic is to use the median of pairwise distances as σ, suggested by Sugiyama's book
+        # TODO: Ask about this sigma
+        sigma = torch.sqrt(
+            torch.median(dsq_all)
+            )
+        ).item()
+
+        σs.append(sigma)
+        σs.append(sigma * 0.333)
+        σs.append(sigma * 0.2)
+        σs.append(sigma / 0.2)
+        σs.append(sigma / 0.333)
+    
+    ratio = 0.0
+
+    for σ in σs:
+        K_all = gaussian_gramian(dsq_all, σ)
+        Kdede = torch.diagonal(K_all) # Shape: B (batch)
+        Kdenu = torch.stack([torch.cat([K_all[i], K_all[:][i]]) for i in range(K_all.shape[0])], 0) # Shape: B x 2B, q->q zero'ed out, so effectively B x 2(B-1)
+
+        ratio += kmm_ratios(Kdede, Kdenu, eps_ratio, version='efficient')
+    
+    ratio = ratio / len(σs)
+    ratio = torch.relu(ratio) if clip_ratio else ratio
+    
+    # mmd = torch.sqrt(torch.relu(mmdsq))
+
+    pearson_div = torch.mean(torch.pow(ratio - 1, 2)) + ratio.sum()
+    
+    return pearson_div
+
+# Un-optimized version of mmd loss from Kai's pytorch implementation
+def mmd_loss_original(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
+    # Assuming z1 = q (2, dim_z), z2 = p (N-1, dim_z)
+
+    dsq_dede, dsq_denu, dsq_nunu = get_esq(z1, z2)
+
+    # Creating list of sigmas, if not defined
+    if len(σs) == 0:
+        # A heuristic is to use the median of pairwise distances as σ, suggested by Sugiyama's book
+        # TODO: Ask about this sigma
+        sigma = torch.sqrt(
+            torch.median(
+                torch.cat([dsq_dede.squeeze(), dsq_denu.squeeze(), dsq_nunu.squeeze()], 1)
+            )
+        ).item()
+
+        σs.append(sigma)
+        σs.append(sigma * 0.333)
+        σs.append(sigma * 0.2)
+        σs.append(sigma / 0.2)
+        σs.append(sigma / 0.333)
+    
+    ratio = 0.0
+
+    for σ in σs:
+        Kdede = gaussian_gramian(dsq_dede, σ)
+        Kdenu = gaussian_gramian(dsq_denu, σ)
+        # Knunu = gaussian_gramian(dsq_nunu, σ)
+
+        ratio += kmm_ratios(Kdede, Kdenu, eps_ratio)
+    
+    ratio = ratio / len(σs)
+    ratio = torch.relu(ratio) if clip_ratio else ratio
+
+    pearson_div = torch.mean(torch.pow(ratio - 1, 2)) + ratio.sum()
+    
+    return pearson_div
+
+    
 
 class projection_MLP(nn.Module):
     def __init__(self, in_dim, out_dim=256):
@@ -93,6 +220,24 @@ class SimCLR(nn.Module):
 
         loss = NT_XentLoss(z1, z2)
         return {'loss':loss, 'loss_sym': loss}
+
+class SimCLRGram(nn.Module):
+    def __init__(self, backbone=resnet50()):
+        super().__init__()
+        
+        self.backbone = backbone
+        self.projector = projection_MLP(backbone.output_dim)
+        self.encoder = nn.Sequential(
+            self.backbone,
+            self.projector
+        )
+
+    def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=0.0):
+        z1 = self.encoder(x1)
+        z2 = self.encoder(x2)
+
+        loss = mmd_loss_efficient(z1, z2)
+        return {'loss':loss, 'loss_gram': loss}
 
 # Original SimCLR model with a discriminator added for only estimating MI (no gradients)
 class SimCLRMI(nn.Module):
