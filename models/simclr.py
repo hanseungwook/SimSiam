@@ -104,7 +104,7 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
         K_all = gaussian_gramian(dsq_all, σ)
         Kdede = torch.diagonal(K_all).unsqueeze(1).repeat(1, 2) # Shape: B (batch) x 2
         K_all_copy = K_all.clone().fill_diagonal_(0)
-        Kdenu = torch.stack([torch.stack([K_all_copy[i], K_all_copy[:][i]], dim=0) for i in range(K_all_copy.shape[0])], 0) # Shape: B x 2 x B, q->q zero'ed out, so effectively B x 2(B-1)
+        Kdenu = torch.stack([torch.stack([K_all_copy[i], K_all_copy[:, i]], dim=0) for i in range(K_all_copy.shape[0])], 0) # Shape: B x 2 x B, q->q zero'ed out, so effectively B x 2(B-1)
 
         ratio += kmm_ratios(Kdede, Kdenu, eps_ratio, version='efficient')
     
