@@ -67,7 +67,6 @@ def kmm_ratios(Kdede, Kdenu, eps_ratio=0.0, version='original'):
 
         # 2 / (2 * (N - 1)) * Kq,q-1 * Kq,p
         # 2 / (2 * (N - 1)) == 1 / (N - 1), where N is the number of images
-        set_trace()
         return (1 / (n_nu-1)) * (torch.matmul(B, torch.ones(B.shape[-1], device=B.device)) / A)
 
 def mmd_loss(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False, version='original'):
@@ -104,7 +103,7 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
         K_all = gaussian_gramian(dsq_all, σ)
         Kdede = torch.diagonal(K_all).unsqueeze(1).repeat(1, 2) # Shape: B (batch) x 2
         K_all_copy = K_all.clone().fill_diagonal_(0)
-        Kdenu = torch.stack([torch.stack([K_all_copy[i], K_all_copy[:, i]], dim=0) for i in range(K_all_copy.shape[0])], 0) # Shape: B x 2 x B, q->q zero'ed out, so effectively B x 2(B-1)
+        Kdenu = torch.stack([torch.stack([K_all_copy[i], K_all_copy[:, i]], dim=0) for i in range(K_all_copy.shape[0])], 0) # Shape: B x 2 x B, q->q zero'ed out, so effectively B x 2 x (B-1)
 
         ratio += kmm_ratios(Kdede, Kdenu, eps_ratio, version='efficient')
     
