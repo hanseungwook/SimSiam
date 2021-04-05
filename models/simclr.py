@@ -56,7 +56,7 @@ def kmm_ratios(Kdede, Kdenu, eps_ratio=0.0, version='original'):
         # return torch.matmul(torch.matmul(torch.inverse(A), B), torch.ones(n_nu, 1).to(Kdede.device))
         return (n_de / n_nu) * torch.matmul(B/A[0][0], torch.ones(n_nu, 1).to(Kdede.device))
     elif version == 'efficient':
-        n_de, n_nu = Kdenu.shape
+        _, _, n_nu = Kdenu.shape
         
         if eps_ratio > 0:
             A = Kdede + eps_ratio * torch.ones(n_de).to(Kdede.device)
@@ -68,7 +68,7 @@ def kmm_ratios(Kdede, Kdenu, eps_ratio=0.0, version='original'):
         # 2 / (2 * (N - 1)) * Kq,q-1 * Kq,p
         # 2 / (2 * (N - 1)) == 1 / (N - 1), where N is the number of images
         set_trace()
-        return (1 / (n_de-1)) * (torch.matmul(B, torch.ones(B.shape[1], device=B.device)) / A)
+        return (1 / (n_nu-1)) * (torch.matmul(B, torch.ones(B.shape[-1], device=B.device)) / A)
 
 def mmd_loss(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False, version='original'):
     # Note that original & efficient versions assume different z1, z2 distributions, so be careful
@@ -102,9 +102,9 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
 
     for σ in σs:
         K_all = gaussian_gramian(dsq_all, σ)
-        Kdede = torch.diagonal(K_all) # Shape: B (batch)
+        Kdede = torch.diagonal(K_all).unsqueeze(1).repeat(1, 2) # Shape: B (batch) x 2
         K_all_copy = K_all.clone().fill_diagonal_(0)
-        Kdenu = torch.stack([torch.stack([K_all_copy[i], K_all_copy[:][i]], dim=0) for i in range(K_all_copy.shape[0])], 0) # Shape: B x 2B, q->q zero'ed out, so effectively B x 2(B-1)
+        Kdenu = torch.stack([torch.stack([K_all_copy[i], K_all_copy[:][i]], dim=0) for i in range(K_all_copy.shape[0])], 0) # Shape: B x 2 x B, q->q zero'ed out, so effectively B x 2(B-1)
 
         ratio += kmm_ratios(Kdede, Kdenu, eps_ratio, version='efficient')
     
@@ -117,7 +117,7 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
     
     return pearson_div
 
-# Un-optimized version of mmd loss from Kai's pytorch implementation
+# Un-optimized version of gramnet loss from Kai's pytorch implementation
 def mmd_loss_original(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
     # Assuming z1 = q (2, dim_z), z2 = p (N-1, dim_z)
 
