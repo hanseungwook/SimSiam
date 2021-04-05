@@ -80,7 +80,7 @@ def mmd_loss(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False, version='original'
 def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
     # Assuming z1, z2 are transformed views of x (N, dim_z)
 
-    dsq_all = euclidsq(x1, x2)
+    dsq_all = euclidsq(z1, z2)
 
     # Creating list of sigmas, if not defined
     if len(σs) == 0:
@@ -91,7 +91,7 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
                 torch.cat([dsq_dede.squeeze(), dsq_denu.squeeze(), dsq_nunu.squeeze()], 1)
             )
         ).item()
-        
+
         σs.append(sigma)
         σs.append(sigma * 0.333)
         σs.append(sigma * 0.2)
