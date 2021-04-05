@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet50
 
+from pdb import set_trace
 
 def NT_XentLoss(z1, z2, temperature=0.5):
     z1 = F.normalize(z1, dim=1)
@@ -56,7 +57,6 @@ def kmm_ratios(Kdede, Kdenu, eps_ratio=0.0, version='original'):
         return (n_de / n_nu) * torch.matmul(B/A[0][0], torch.ones(n_nu, 1).to(Kdede.device))
     elif version == 'efficient':
         n_de, n_nu = Kdenu.shape
-        n_nu -= 2 # Subtracting the q => q items in counting for n_nu
         
         if eps_ratio > 0:
             A = Kdede + eps_ratio * torch.ones(n_de).to(Kdede.device)
@@ -65,7 +65,9 @@ def kmm_ratios(Kdede, Kdenu, eps_ratio=0.0, version='original'):
         
         B = Kdenu
 
+        # 2 / (2 * (N - 1)) * Kq,q-1 * Kq,p
         # 2 / (2 * (N - 1)) == 1 / (N - 1), where N is the number of images
+        set_trace()
         return (1 / (n_de-1)) * (torch.matmul(B, torch.ones(B.shape[1], device=B.device)) / A)
 
 def mmd_loss(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False, version='original'):
@@ -91,17 +93,18 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
         ).item()
 
         σs.append(sigma)
-        σs.append(sigma * 0.333)
-        σs.append(sigma * 0.2)
-        σs.append(sigma / 0.2)
-        σs.append(sigma / 0.333)
+        # σs.append(sigma * 0.333)
+        # σs.append(sigma * 0.2)
+        # σs.append(sigma / 0.2)
+        # σs.append(sigma / 0.333)
     
     ratio = 0.0
 
     for σ in σs:
         K_all = gaussian_gramian(dsq_all, σ)
         Kdede = torch.diagonal(K_all) # Shape: B (batch)
-        Kdenu = torch.stack([torch.cat([K_all[i], K_all[:][i]]) for i in range(K_all.shape[0])], 0) # Shape: B x 2B, q->q zero'ed out, so effectively B x 2(B-1)
+        K_all_copy = K_all.clone().fill_diagonal_(0)
+        Kdenu = torch.stack([torch.stack([K_all_copy[i], K_all_copy[:][i]], dim=0) for i in range(K_all_copy.shape[0])], 0) # Shape: B x 2B, q->q zero'ed out, so effectively B x 2(B-1)
 
         ratio += kmm_ratios(Kdede, Kdenu, eps_ratio, version='efficient')
     
