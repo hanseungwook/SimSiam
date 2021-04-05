@@ -220,11 +220,11 @@ class SimCLR(nn.Module):
         return {'loss':loss, 'loss_sym': loss}
 
 class SimCLRGram(nn.Module):
-    def __init__(self, backbone=resnet50()):
+    def __init__(self, backbone=resnet50(), proj_dim=128):
         super().__init__()
         
         self.backbone = backbone
-        self.projector = projection_MLP(backbone.output_dim)
+        self.projector = projection_MLP(backbone.output_dim, out_dim=proj_dim)
         self.encoder = nn.Sequential(
             self.backbone,
             self.projector
