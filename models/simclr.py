@@ -105,7 +105,7 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
         K_all = gaussian_gramian(dsq_all, σ)
         
         # Clipping kernel
-        K_all = torch.clamp(K_all, min=1e-15, max=1e15)
+        K_all = torch.clamp(K_all, min=1e-10, max=1e15)
         # Getting the N'th diagonal above and below, but should be symmetrical/equal
         # Ordered like 11', 22' ... NN', 1'1... N'N
         # Shape (2*N, 1)
