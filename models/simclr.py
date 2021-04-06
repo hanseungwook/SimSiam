@@ -129,7 +129,7 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
     
     # mmd = torch.sqrt(torch.relu(mmdsq))
 
-    pearson_div = torch.mean(torch.pow(ratio - 1, 2))
+    pearson_div = -1.0 * torch.mean(torch.pow(ratio - 1, 2))
     
     return pearson_div
 
