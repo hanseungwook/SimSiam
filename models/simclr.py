@@ -109,7 +109,7 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
         # Getting the N'th diagonal above and below, but should be symmetrical/equal
         # Ordered like 11', 22' ... NN', 1'1... N'N
         # Shape (2*N, 1)
-        Kdede = torch.cat([torch.diag(K_all, N), torch.diag(K_all, -N)], dim=0).view(2 * N, 1) 
+        Kdede = torch.cat([torch.diag(K_all, N), torch.diag(K_all, -N)], dim=0)
 
         # Creating mask for positives
         diag = torch.eye(2*N, dtype=torch.bool, device=K_all.device)
