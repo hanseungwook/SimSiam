@@ -83,7 +83,8 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
     N = z1.shape[0]
     assert N == z2.shape[0]
 
-    dsq_all = euclidsq(z1, z2)
+    all_z = torch.cat([z1, z2], dim=0)
+    dsq_all = euclidsq(all_z, all_z)
 
     # Creating list of sigmas, if not defined
     if len(σs) == 0:
