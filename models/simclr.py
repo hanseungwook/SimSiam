@@ -56,7 +56,7 @@ def kmm_ratios(Kdede, Kdenu, eps_ratio=0.0, version='original'):
         # return torch.matmul(torch.matmul(torch.inverse(A), B), torch.ones(n_nu, 1).to(Kdede.device))
         return (n_de / n_nu) * torch.matmul(B/A[0][0], torch.ones(n_nu, 1).to(Kdede.device))
     elif version == 'efficient':
-        _, _, n_nu = Kdenu.shape
+        _, n_nu = Kdenu.shape
         
         if eps_ratio > 0:
             A = Kdede + eps_ratio * torch.ones(n_de).to(Kdede.device)
@@ -65,9 +65,8 @@ def kmm_ratios(Kdede, Kdenu, eps_ratio=0.0, version='original'):
         
         B = Kdenu
 
-        # 2 / (2 * (N - 1)) * Kq,q-1 * Kq,p
-        # 2 / (2 * (N - 1)) == 1 / (N - 1), where N is the number of images
-        return (1 / (n_nu-1)) * (torch.matmul(B, torch.ones(B.shape[-1], device=B.device)) / A)
+        # 2 / 2 * (N-1) == 1 / (N - 1), where N is the batch size
+        return (1 / n_nu) * (torch.matmul(B, torch.ones(B.shape[-1], device=B.device)) / A)
 
 def mmd_loss(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False, version='original'):
     # Note that original & efficient versions assume different z1, z2 distributions, so be careful
@@ -80,6 +79,9 @@ def mmd_loss(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False, version='original'
 # and then re-arranges for calculating the ratio
 def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
     # Assuming z1, z2 are transformed views of x (N, dim_z)
+
+    N = z1.shape[0]
+    assert N == z2.shape[0]
 
     dsq_all = euclidsq(z1, z2)
 
@@ -101,12 +103,22 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
 
     for σ in σs:
         K_all = gaussian_gramian(dsq_all, σ)
-
+        
         # Clipping kernel
         K_all = torch.clamp(K_all, min=1e-15, max=1e15)
-        Kdede = torch.diagonal(K_all).unsqueeze(1).repeat(1, 2) # Shape: B (batch) x 2
-        K_all_copy = K_all.clone().fill_diagonal_(0)
-        Kdenu = torch.stack([torch.stack([K_all_copy[i], K_all_copy[:, i]], dim=0) for i in range(K_all_copy.shape[0])], 0) # Shape: B x 2 x B, q->q zero'ed out, so effectively B x 2 x (B-1)
+        # Getting the N'th diagonal above and below, but should be symmetrical/equal
+        # Ordered like 11', 22' ... NN', 1'1... N'N
+        # Shape (2*N, 1)
+        Kdede = torch.cat([torch.diag(K_all, N), torch.diag(K_all, -N)], dim=0).view(2 * N, 1) 
+
+        # Creating mask for positives
+        diag = torch.eye(2*N, dtype=torch.bool, device=K_all.device)
+        diag[N:,:N] = diag[:N,N:] = diag[:N,:N]
+
+        # Using opposite of positive mask to get all negatives
+        # Ordered like (12, 13, ... 1N'), (21, 23, ... 2N') in each row (same ordering as positives)
+        # Shape (2*N, 2*(N-1))
+        Kdenu = K_all[~diag].view(2*N, -1)
 
         ratio += kmm_ratios(Kdede, Kdenu, eps_ratio, version='efficient')
     
