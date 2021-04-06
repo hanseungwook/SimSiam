@@ -101,6 +101,9 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
 
     for σ in σs:
         K_all = gaussian_gramian(dsq_all, σ)
+
+        # Clipping kernel
+        K_all = torch.clip(K_all, min=1e-15, max=1e15)
         Kdede = torch.diagonal(K_all).unsqueeze(1).repeat(1, 2) # Shape: B (batch) x 2
         K_all_copy = K_all.clone().fill_diagonal_(0)
         Kdenu = torch.stack([torch.stack([K_all_copy[i], K_all_copy[:, i]], dim=0) for i in range(K_all_copy.shape[0])], 0) # Shape: B x 2 x B, q->q zero'ed out, so effectively B x 2 x (B-1)
@@ -109,11 +112,11 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
     
     ratio = ratio / len(σs)
     # ratio = torch.relu(ratio) if clip_ratio else ratio # Clip ratio on the upper-bound 
-    ratio = torch.clip(ratio, min=0, max=1e15)
+    # ratio = torch.clip(ratio, min=0, max=1e15)
     
     # mmd = torch.sqrt(torch.relu(mmdsq))
 
-    pearson_div = torch.mean(torch.pow(ratio - 1, 2)) + ratio.sum()
+    pearson_div = torch.mean(torch.pow(ratio - 1, 2))
     
     return pearson_div
 
