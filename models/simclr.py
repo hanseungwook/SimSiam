@@ -36,10 +36,14 @@ def gram_loss(z1, z2, temperature=0.5):
     device = z1.device 
 
     representations = torch.cat([z1, z2], dim=0)
+
+    # Cosine similarity kernel re-adjusted to (1,2) range
+    # similarity_matrix = F.cosine_similarity(representations.unsqueeze(1), representations.unsqueeze(0), dim=-1) + 1
+
+    # Gaussian kernel
     dsq_all = euclidsq(representations, representations)
     sigma = torch.sqrt(torch.median(dsq_all)).item()
-    similarity_matrix = F.cosine_similarity(representations.unsqueeze(1), representations.unsqueeze(0), dim=-1) + 1
-
+    similarity_matrix = gaussian_gramian(dsq_all, σ)
 
     l_pos = torch.diag(similarity_matrix, N)
     r_pos = torch.diag(similarity_matrix, -N)
@@ -51,10 +55,10 @@ def gram_loss(z1, z2, temperature=0.5):
 
     negatives = torch.matmul(negatives, torch.ones(negatives.shape[-1], 1, device=negatives.device))
 
-    # Cossine without exponential
+    # Cosine without exponential
     # loss = -1.0 * torch.log(positives / (positives + negatives)).sum()
 
-    # Cossine as ratio
+    # Cosine as ratio
     loss = -1.0 * (torch.log(positives) - torch.log(negatives)).sum()
 
     # logits = torch.cat([positives, negatives], dim=1)
