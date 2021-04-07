@@ -39,20 +39,24 @@ def gram_loss(z1, z2, temperature=0.5):
     dsq_all = euclidsq(representations, representations)
     sigma = torch.sqrt(torch.median(dsq_all)).item()
     similarity_matrix = gaussian_gramian(dsq_all, sigma)
+
     l_pos = torch.diag(similarity_matrix, N)
     r_pos = torch.diag(similarity_matrix, -N)
     positives = torch.cat([l_pos, r_pos]).view(2 * N, 1)
+
     diag = torch.eye(2*N, dtype=torch.bool, device=device)
     diag[N:,:N] = diag[:N,N:] = diag[:N,:N]
     negatives = similarity_matrix[~diag].view(2*N, -1)
 
+    negatives = torch.matmul(negatives, torch.ones(negatives.shape[-1], 1, device=negatives.device))
 
-    logits = torch.cat([positives, negatives], dim=1)
-    logits /= temperature
+    loss = torch.log(positives / negatives).sum()
 
-    labels = torch.zeros(2*N, device=device, dtype=torch.int64)
+    # logits = torch.cat([positives, negatives], dim=1)
+    # logits /= temperature
+    # labels = torch.zeros(2*N, device=device, dtype=torch.int64)
 
-    loss = F.cross_entropy(logits, labels, reduction='sum')
+    # loss = F.cross_entropy(logits, labels, reduction='sum')
     return loss / (2 * N)
 
 ############################################################################
