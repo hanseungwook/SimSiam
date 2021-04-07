@@ -52,7 +52,8 @@ def gram_loss(z1, z2, temperature=0.5):
     negatives = torch.matmul(negatives, torch.ones(negatives.shape[-1], 1, device=negatives.device))
 
     # loss = -1.0 * (torch.log(negatives) - torch.log(positives)).sum()
-    loss = torch.log(positives / negatives).sum()
+    # loss = (torch.log(positives) - torch.log(negatives)).sum()
+    loss = -1.0 * torch.log(positives / (positives + negatives)).sum()
 
     # logits = torch.cat([positives, negatives], dim=1)
     # logits /= temperature
