@@ -43,7 +43,7 @@ def gram_loss(z1, z2, temperature=0.5):
     # Gaussian kernel
     dsq_all = euclidsq(representations, representations)
     sigma = torch.sqrt(torch.median(dsq_all)).item()
-    similarity_matrix = gaussian_gramian(dsq_all, σ)
+    similarity_matrix = gaussian_gramian(dsq_all, sigma)
 
     l_pos = torch.diag(similarity_matrix, N)
     r_pos = torch.diag(similarity_matrix, -N)
