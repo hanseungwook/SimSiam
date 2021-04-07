@@ -28,6 +28,33 @@ def NT_XentLoss(z1, z2, temperature=0.5):
     loss = F.cross_entropy(logits, labels, reduction='sum')
     return loss / (2 * N)
 
+def gram_loss(z1, z2, temperature=0.5):
+    z1 = F.normalize(z1, dim=1)
+    z2 = F.normalize(z2, dim=1)
+
+    N, Z = z1.shape 
+    device = z1.device 
+
+    representations = torch.cat([z1, z2], dim=0)
+    dsq_all = euclidsq(representations, representations)
+    sigma = torch.sqrt(torch.median(dsq_all)).item()
+    similarity_matrix = gaussian_gramian(dsq_all, sigma)
+    l_pos = torch.diag(similarity_matrix, N)
+    r_pos = torch.diag(similarity_matrix, -N)
+    positives = torch.cat([l_pos, r_pos]).view(2 * N, 1)
+    diag = torch.eye(2*N, dtype=torch.bool, device=device)
+    diag[N:,:N] = diag[:N,N:] = diag[:N,:N]
+    negatives = similarity_matrix[~diag].view(2*N, -1)
+
+
+    logits = torch.cat([positives, negatives], dim=1)
+    logits /= temperature
+
+    labels = torch.zeros(2*N, device=device, dtype=torch.int64)
+
+    loss = F.cross_entropy(logits, labels, reduction='sum')
+    return loss / (2 * N)
+
 ############################################################################
 # GramNet Ratio Loss & Utilies
 ############################################################################
@@ -109,7 +136,7 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
         K_all = torch.clamp(K_all, min=1e-10, max=1e15)
         # Getting the N'th diagonal above and below, but should be symmetrical/equal
         # Ordered like 11', 22' ... NN', 1'1... N'N
-        # Shape (2*N, 1)
+        # Shape (2*N)
         Kdede = torch.cat([torch.diag(K_all, N), torch.diag(K_all, -N)], dim=0)
 
         # Creating mask for positives
@@ -129,7 +156,8 @@ def mmd_loss_efficient(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
     
     # mmd = torch.sqrt(torch.relu(mmdsq))
 
-    pearson_div = -1.0 * torch.mean(torch.pow(ratio - 1, 2))
+    # pearson_div = -1.0 * torch.mean(torch.pow(ratio - 1, 2))
+    pearson_div = -1.0 * torch.mean(ratio)
     
     return pearson_div
 
@@ -253,7 +281,7 @@ class SimCLRGram(nn.Module):
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
 
-        loss = mmd_loss_efficient(z1, z2)
+        loss = gram_loss(z1, z2)
         return {'loss':loss, 'loss_gram': loss}
 
 # Original SimCLR model with a discriminator added for only estimating MI (no gradients)
