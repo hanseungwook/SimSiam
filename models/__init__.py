@@ -58,7 +58,7 @@ def get_model(model_cfg):
     elif model_cfg.name == 'byol':
         model = BYOL(get_backbone(model_cfg.backbone))
     elif model_cfg.name == 'simclr':
-        model = SimCLR(get_backbone(model_cfg.backbone))
+        model = SimCLR(get_backbone(model_cfg.backbone), model_cfg.proj_dim)
     elif model_cfg.name == 'simclr_mi':
         model = SimCLRMI(get_backbone(model_cfg.backbone), model_cfg.proj_dim)
     elif model_cfg.name == 'simclr_joint':

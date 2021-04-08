@@ -1,4 +1,4 @@
-name: simclr-cifar10-experiment
+name: simclr-adam-cifar10-experiment
 dataset: 
   name: cifar10
   image_size: 32
@@ -7,6 +7,7 @@ dataset:
 model: 
   name: simclr
   backbone: resnet18_cifar_variant1
+  proj_dim: 256
 
 load_model: False
 
