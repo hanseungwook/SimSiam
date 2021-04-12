@@ -358,7 +358,7 @@ class SimCLRKL(nn.Module):
 
         d_loss = (real_loss + fake_loss) / 2
         
-        return {'loss': d_loss, 'loss_d/total': d_loss, 'loss_d/real': real_loss, 'loss_d/fake': fake_loss}
+        return {'loss': d_loss + 2, 'loss_d/total': d_loss, 'loss_d/real': real_loss, 'loss_d/fake': fake_loss}
 
 # Original SimCLR model with a discriminator added for only estimating MI (no gradients)
 class SimCLRMI(nn.Module):
