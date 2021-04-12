@@ -211,7 +211,38 @@ def mmd_loss_original(z1, z2, σs=[], eps_ratio=0.0, clip_ratio=False):
     
     return pearson_div
 
-    
+
+class prediction_MLP(nn.Module):
+    def __init__(self, in_dim=2048, hidden_dim=512, out_dim=2048): # bottleneck structure
+        super().__init__()
+        ''' page 3 baseline setting
+        Prediction MLP. The prediction MLP (h) has BN applied 
+        to its hidden fc layers. Its output fc does not have BN
+        (ablation in Sec. 4.4) or ReLU. This MLP has 2 layers. 
+        The dimension of h’s input and output (z and p) is d = 2048, 
+        and h’s hidden layer’s dimension is 512, making h a 
+        bottleneck structure (ablation in supplement). 
+        '''
+
+        self.in_dim = in_dim
+        self.out_dim = out_dim
+        
+        self.layer1 = nn.Sequential(
+            nn.Linear(in_dim, hidden_dim),
+            nn.BatchNorm1d(hidden_dim),
+            nn.ReLU(inplace=True)
+        )
+        self.layer2 = nn.Linear(hidden_dim, out_dim)
+        """
+        Adding BN to the output of the prediction MLP h does not work
+        well (Table 3d). We find that this is not about collapsing. 
+        The training is unstable and the loss oscillates.
+        """
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        return x 
 
 class projection_MLP(nn.Module):
     def __init__(self, in_dim, out_dim=256):
@@ -308,17 +339,19 @@ class SimCLRKL(nn.Module):
             self.backbone,
             self.projector
         )
+        self.predictor = prediction_MLP(in_dim=proj_dim, hidden_dim=proj_dim//2, out_dim=proj_dim)
 
         self.discriminator = Discriminator(in_dim=proj_dim)
     
     def forward(self, x1, x2):
         d = self.discriminator
         z1, z2 = self.encoder(x1), self.encoder(x2)
+        p1 = self.predictor(z1)
 
         real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
         fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
 
-        real_outputs, fake_outputs = d(z1), d(z2)
+        real_outputs, fake_outputs = d(p1), d(z2)
         
         real_loss = F.binary_cross_entropy(real_outputs, real)
         fake_loss = F.binary_cross_entropy(fake_outputs, fake)
