@@ -297,6 +297,36 @@ class SimCLRGram(nn.Module):
         loss = gram_loss(z1, z2)
         return {'loss':loss, 'loss_gram': loss}
 
+# SimCLR + discriminator for learning to estimate kl divergence btw p (z1) and q (z2)
+class SimCLRKL(nn.Module):
+    def __init__(self, backbone=resnet50(), proj_dim=128):
+        super().__init__()
+        
+        self.backbone = backbone
+        self.projector = projection_MLP(backbone.output_dim, out_dim=proj_dim)
+        self.encoder = nn.Sequential(
+            self.backbone,
+            self.projector
+        )
+
+        self.discriminator = Discriminator(in_dim=proj_dim)
+    
+    def forward(self, x1, x2):
+        d = self.discriminator
+        z1, z2 = self.encoder(x1), self.encoder(x2)
+
+        real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+        fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+
+        real_outputs, fake_outputs = d(z1), d(z2)
+        
+        real_loss = F.binary_cross_entropy(real_outputs, real)
+        fake_loss = F.binary_cross_entropy(fake_outputs, fake)
+
+        d_loss = (real_loss + fake_loss) / 2
+        
+        return {'loss': d_loss, 'loss_d/total': d_loss, 'loss_d/real': real_loss, 'loss_d/fake': fake_loss}
+
 # Original SimCLR model with a discriminator added for only estimating MI (no gradients)
 class SimCLRMI(nn.Module):
     def __init__(self, backbone=resnet50(), proj_dim=128):

@@ -1,6 +1,6 @@
 from .simsiam import SimSiam, SimSiamKD, SimSiamKDAnchor, SimSiamAdv, SimSiamJoint, SimSiamMI
 from .byol import BYOL
-from .simclr import SimCLR, SimCLRJoint, SimCLRMI, SimCLRGram
+from .simclr import SimCLR, SimCLRJoint, SimCLRMI, SimCLRGram, SimCLRKL
 from torchvision.models import resnet50, resnet18
 import torch
 from .backbones import *
@@ -65,6 +65,8 @@ def get_model(model_cfg):
         model = SimCLRJoint(get_backbone(model_cfg.backbone))
     elif model_cfg.name == 'simclr_gram':
         model = SimCLRGram(get_backbone(model_cfg.backbone), model_cfg.proj_dim)
+    elif model_cfg.name == 'simclr_kl':
+        model = SimCLRKL(get_backbone(model_cfg.backbone), model_cfg.proj_dim)
     elif model_cfg.name == 'swav':
         raise NotImplementedError
     else:
