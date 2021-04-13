@@ -357,6 +357,12 @@ class SimCLRKL(nn.Module):
         fake_loss = F.binary_cross_entropy(fake_outputs, fake)
 
         d_loss = (real_loss + fake_loss) / 2
+
+        # Flip real and loss and minimize respect to encoder => min-max problem btw encoder & discriminator (1 step each)
+
+        # Add noise to one leg for entropy regularization
+
+        # Stop gradient version
         
         return {'loss': d_loss + 2, 'loss_d/total': d_loss, 'loss_d/real': real_loss, 'loss_d/fake': fake_loss}
 
