@@ -60,7 +60,7 @@ def main(device, args):
     model = torch.nn.DataParallel(model)
 
     # define optimizer
-    optimizer = get_optimizer(
+    optimizer_e, optimizer_d = get_optimizer(
         args.train.optimizer.name, model, 
         lr=args.train.base_lr, 
         momentum=args.train.optimizer.momentum,
@@ -89,19 +89,27 @@ def main(device, args):
             images1 = images[0].to(device, non_blocking=True)
             images2 = images[1].to(device, non_blocking=True)
 
-            # Original loss step
-            optimizer.zero_grad()
-            data_dict = model.forward(images1, images2)
-            loss = data_dict['loss'].mean() # ddp
+            # Generator/encoder step
+            optimizer_e.zero_grad()
+            data_dict_e = model.forward(images1, images2, disc=False, noise=args.train.noise)
+            loss = data_dict_e['loss_g/total'].mean() # ddp
             loss.backward()
-            optimizer.step()
+            optimizer_e.step()
+
+            # Discriminator step
+            optimizer_d.zero_grad()
+            data_dict_d = model.forward(images1, images2, disc=True, noise=args.train.noise)
+            loss = data_dict_d['loss_d/total'].mean() # ddp
+            loss.backward()
+            optimizer_d.step()
             
             # Scheduler step
             # lr_scheduler.step()
             # data_dict.update({'lr':lr_scheduler.get_lr()})
+            data_dict_e.update(data_dict_d)
             
-            local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
-            logger.update_scalers(data_dict)
+            local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict_e.items()})
+            logger.update_scalers(data_dict_e)
 
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:

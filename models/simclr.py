@@ -343,7 +343,13 @@ class SimCLRKL(nn.Module):
 
         self.discriminator = Discriminator(in_dim=proj_dim)
     
-    def forward(self, x1, x2):
+    def forward(self, x1, x2, disc=False, noise=False):
+        if disc:
+            return self.forward_d(x1, x2, noise)
+        else:
+            return self.forward_e(x1, x2, noise)
+    
+    def forward_e(self, x1, x2, noise):
         d = self.discriminator
         z1, z2 = self.encoder(x1), self.encoder(x2)
         p1 = self.predictor(z1)
@@ -351,20 +357,46 @@ class SimCLRKL(nn.Module):
         real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
         fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
 
+        if noise:
+            p1 += torch.empty_like(p1).normal_(mean=0, std=0.01)
+
         real_outputs, fake_outputs = d(p1), d(z2)
         
+        # Flip real and fake for encoder/generator ()
+        real_loss = F.binary_cross_entropy(real_outputs, fake)
+        fake_loss = F.binary_cross_entropy(fake_outputs, real)
+
+        d_loss = (real_loss + fake_loss) / 2
+
+        return {'loss_g/total': d_loss, 'loss_g/real': real_loss, 'loss_g/fake': fake_loss}
+    
+    def forward_d(self, x1, x2, noise):
+        d = self.discriminator
+        z1, z2 = self.encoder(x1), self.encoder(x2)
+        p1 = self.predictor(z1)
+
+        real = torch.ones((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+        fake = torch.zeros((x1.shape[0], 1), dtype=torch.float32, device=x1.device)
+
+        if noise:
+            p1 += torch.empty_like(p1).normal_(mean=0, std=0.01)
+
+        real_outputs, fake_outputs = d(p1), d(z2)
+        
+        # Flip real and fake for encoder/generator ()
         real_loss = F.binary_cross_entropy(real_outputs, real)
         fake_loss = F.binary_cross_entropy(fake_outputs, fake)
 
         d_loss = (real_loss + fake_loss) / 2
 
+        return {'loss_d/total': d_loss, 'loss_d/real': real_loss, 'loss_d/fake': fake_loss}
         # Flip real and loss and minimize respect to encoder => min-max problem btw encoder & discriminator (1 step each)
 
         # Add noise to one leg for entropy regularization
 
         # Stop gradient version
         
-        return {'loss': d_loss + 2, 'loss_d/total': d_loss, 'loss_d/real': real_loss, 'loss_d/fake': fake_loss}
+        
 
 # Original SimCLR model with a discriminator added for only estimating MI (no gradients)
 class SimCLRMI(nn.Module):
