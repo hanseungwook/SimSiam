@@ -55,7 +55,7 @@ def get_model(model_cfg):
         model =  SimSiamMI(get_backbone(model_cfg.backbone), model_cfg.proj_dim)
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers) 
-    elif model_cfg.name == 'simsiam_mi':
+    elif model_cfg.name == 'simsiam_noise':
         model =  SimSiamNoise(get_backbone(model_cfg.backbone))
         if model_cfg.proj_layers is not None:
             model.projector.set_layers(model_cfg.proj_layers) 
