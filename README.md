@@ -99,6 +99,7 @@ If you find this repo helpful, please consider star so that I have the motivatio
 `joint-simclr-iter`: Step 1 (MI Estimation with respect to f + D) and Step 2 (SimCLR's NT-Xent loss + MI maximization with respect to f) \
 `calc-mi`: Original models of SimSiam, SimCLR, with a discriminator added to training to estimate MI (no gradients from MI estimation)
 `gram`: Experiments with Gram ratio loss and changed kernels
+`noise`: SimSiam with SG replaced with noise added to the leg w/o predictor
 `archive/joint-simclr-adam`: SimCLR's NT-Xent loss + MI loss via discriminator with Adam optimization dynamics (before being merged into `joint-simclr`)\
 `e2e-baseline`: End-to-end model only estimating the ratio (two versions, in which the two distributions are created at x and z-levels) \
 

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torchvision.models import resnet50
 
 
-def D(p, z, version='simplified'): # negative cosine similarity
+def D(p, z, version='simplified', noise_scale=0.0): # negative cosine similarity
     if version == 'original':
         z = z.detach() # stop gradient
         p = F.normalize(p, dim=1) # l2-normalize 
@@ -15,6 +15,15 @@ def D(p, z, version='simplified'): # negative cosine similarity
         return - F.cosine_similarity(p, z.detach(), dim=-1).mean()
     elif version == 'symmetric':
         return - F.cosine_similarity(p, z, dim=-1).mean()
+    elif version == 'noise':
+        # l2-normalize
+        p = F.normalize(p, dim=1)
+        z = F.normalize(z, dim=1)
+
+        # Add noise to z
+        z += torch.empty_like(z).normal_(mean=0, std=noise_scale)
+
+        return -(p*z).sum(dim=1).mean()
     else:
         raise Exception
 
@@ -336,6 +345,30 @@ class SimSiamMI(nn.Module):
         mi = -1.0 * real_outputs
         
         return {'loss_d/total': d_loss, 'loss_d/real': real_loss, 'loss_d/fake': fake_loss, 'loss_d/mi': mi}
+
+# Original SimSiam + Replaced SG with noise added to that leg 
+class SimSiamNoise(nn.Module):
+    def __init__(self, backbone=resnet50()):
+        super().__init__()
+        
+        self.backbone = backbone
+        self.projector = projection_MLP(backbone.output_dim)
+
+        self.encoder = nn.Sequential( # f encoder
+            self.backbone,
+            self.projector
+        )
+        self.predictor = prediction_MLP()
+    
+    def forward(self, x1, x2, noise_scale=0.0):
+
+        f, h = self.encoder, self.predictor
+        z1, z2 = f(x1), f(x2)
+        p1, p2 = h(z1), h(z2)
+        
+        # Loss calculated with noise added
+        L = D(p1, z2, version='noise', noise_scale=noise_scale) / 2 + D(p2, z1, version='noise', noise_scale=noise_scale) / 2
+        return {'loss': L}
 
 if __name__ == "__main__":
     model = SimSiam()

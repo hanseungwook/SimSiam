@@ -8,7 +8,7 @@ from tqdm import tqdm
 from arguments import get_args
 from augmentations import get_aug
 from models import get_model
-from tools import AverageMeter, knn_monitor, Logger, file_exist_check
+from tools import AverageMeter, knn_monitor, Logger, file_exist_check, ExpScheduler
 from datasets import get_dataset
 from optimizers import get_optimizer, LR_Scheduler
 from linear_eval import main as linear_eval
@@ -66,13 +66,15 @@ def main(device, args):
         momentum=args.train.optimizer.momentum,
         weight_decay=args.train.optimizer.weight_decay)
 
-    # lr_scheduler = LR_Scheduler(
-    #     optimizer,
-    #     args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256, 
-    #     args.train.num_epochs, args.train.base_lr*args.train.batch_size/256, args.train.final_lr*args.train.batch_size/256, 
-    #     len(train_loader),
-    #     constant_predictor_lr=True # see the end of section 4.2 predictor
-    # )
+    lr_scheduler = LR_Scheduler(
+        optimizer,
+        args.train.warmup_epochs, args.train.warmup_lr*args.train.batch_size/256, 
+        args.train.num_epochs, args.train.base_lr*args.train.batch_size/256, args.train.final_lr*args.train.batch_size/256, 
+        len(train_loader),
+        constant_predictor_lr=True # see the end of section 4.2 predictor
+    )
+    
+    noise_scheduler = ExpScheduler(args.train.noise.scale_init, min_val=args.train.noise.scale_min, decay_rate=args.train.noise.decay_rate, decay_int=args.train.noise.decay_int)
 
     logger = Logger(tensorboard=args.logger.tensorboard, matplotlib=args.logger.matplotlib, log_dir=args.log_dir)
     best_accuracy = 0.0
@@ -82,6 +84,7 @@ def main(device, args):
     global_progress = tqdm(range(start_epoch, start_epoch+args.train.stop_at_epoch), desc=f'Training')
     for epoch in global_progress:
         model.train()      
+        noise_scale = noise_scheduler.step()
         
         # Train model
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{start_epoch+args.train.num_epochs}', disable=args.hide_progress)
@@ -91,14 +94,14 @@ def main(device, args):
 
             # Original loss step
             optimizer.zero_grad()
-            data_dict = model.forward(images1, images2)
+            data_dict = model.forward(images1, images2, noise_scale=noise_scale)
             loss = data_dict['loss'].mean() # ddp
             loss.backward()
             optimizer.step()
             
             # Scheduler step
-            # lr_scheduler.step()
-            # data_dict.update({'lr':lr_scheduler.get_lr()})
+            lr_scheduler.step()
+            data_dict.update({'lr':lr_scheduler.get_lr(), 'noise_scale': noise_scale})
             
             local_progress.set_postfix({k:(v.mean() if isinstance(v, torch.Tensor) else v) for k, v in data_dict.items()})
             logger.update_scalers(data_dict)
