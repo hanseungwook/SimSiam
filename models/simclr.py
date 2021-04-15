@@ -78,7 +78,7 @@ def gram_loss_mean(z1, z2, temperature=0.5):
 
     z_total_sum = z1.sum(dim=0) + z2.sum(dim=0)
     # Shape: N
-    z_negatives = torch.stack([(z_total_sum - z1[i] - z2[i]) for i in range(z1.shape[0])], dim=0)
+    z_negatives = torch.stack([(z_total_sum - z1[i] - z2[i]) for i in range(z1.shape[0])], dim=0) / (2*N - 2)
 
     # Gaussian kernel
     # Shape: 2N
@@ -91,7 +91,7 @@ def gram_loss_mean(z1, z2, temperature=0.5):
     negatives = gaussian_gramian(dsq_neg, sigma)
 
     # Cosine as ratio
-    loss = -1.0 * (torch.log(positives) - torch.log(negatives)).sum()
+    loss = -1.0 * (torch.log(positives) - torch.log(negatives * (2*N - 2))).sum()
 
     return loss / (2 * N)
 
