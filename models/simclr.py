@@ -377,10 +377,10 @@ class SimCLRVAE(nn.Module):
         loss = gram_loss_mean(z1, z2)
 
         # Calculate KL divergence between z1, z2, gaussian
-        z1_logvar = torch.log(var)
+        z1_logvar = torch.log(z1_var)
         z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_mu.pow(2) - z1_logvar.exp())
         
-        z2_logvar = torch.log(var)
+        z2_logvar = torch.log(z2_var)
         z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_mu.pow(2) - z2_logvar.exp())
 
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
