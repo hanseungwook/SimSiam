@@ -95,6 +95,22 @@ def gram_loss_mean(z1, z2, temperature=0.5):
 
     return loss / (2 * N)
 
+def gaussian_kernel_pos_loss(z1, z2, temperature=0.5):
+    N, Z = z1.shape 
+    device = z1.device 
+
+    z1 = F.normalize(z1, dim=1)
+    z2 = F.normalize(z2, dim=1)
+
+    # Shape: 2N
+    dsq_pos = torch.sum((z1-z2)**2, dim=1)
+    sigma = torch.sqrt(torch.median(torch.cat([dsq_pos]))).item()
+    positives = gaussian_gramian(dsq_pos, sigma)
+
+    loss = -1.0 * positives.mean()
+
+    return loss
+
 ############################################################################
 # GramNet Ratio Loss & Utilies
 ############################################################################
@@ -336,6 +352,43 @@ class SimCLR(nn.Module):
 
         loss = NT_XentLoss(z1, z2)
         return {'loss':loss, 'loss_sym': loss}
+
+
+class SimCLRVAE(nn.Module):
+    def __init__(self, backbone=resnet50(), proj_dim=128):
+        super().__init__()
+        
+        self.backbone = backbone
+        self.projector_mu = projection_MLP(backbone.output_dim, out_dim=proj_dim)
+        self.projector_var = projection_MLP(backbone.output_dim, out_dim=proj_dim)
+        self.encoder = nn.Sequential(
+            self.backbone
+        )
+        
+
+    def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=0.0):
+        z1 = self.encoder(x1)
+        z2 = self.encoder(x2)
+
+        z1_mu, z1_var = self.projector_mu(z1), F.softplus(self.projector_var(z1))
+        z2_mu, z2_var = self.projector_mu(z2), F.softplus(self.projector_var(z2))
+
+        # Calculate positive pair loss
+        loss = gram_loss_mean(z1, z2)
+
+        # Calculate KL divergence between z1, z2, gaussian
+        z1_logvar = torch.log(var)
+        z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_mu.pow(2) - z1_logvar.exp())
+        
+        z2_logvar = torch.log(var)
+        z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_mu.pow(2) - z2_logvar.exp())
+
+        loss_kl = z1_kl * 0.5 + z2_kl * 0.5
+        loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
+        loss = loss_kl + loss_pos
+
+        return {'loss/total':loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
+
 
 class SimCLRGram(nn.Module):
     def __init__(self, backbone=resnet50(), proj_dim=128):
