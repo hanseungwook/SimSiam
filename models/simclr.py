@@ -384,10 +384,11 @@ class SimCLRVAE(nn.Module):
         z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_mu.pow(2) - z2_logvar.exp())
 
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
-        loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
+        # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
+        loss_pos = - F.cosine_similarity(p, z, dim=-1).mean()
         loss = loss_kl + loss_pos
 
-        return {'loss': loss, 'loss/total':loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
+        return {'loss': loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
 
 
 class SimCLRGram(nn.Module):
