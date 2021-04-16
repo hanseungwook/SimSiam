@@ -387,7 +387,7 @@ class SimCLRVAE(nn.Module):
         loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
         loss = loss_kl + loss_pos
 
-        return {'loss/total':loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
+        return {'loss': loss, 'loss/total':loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
 
 
 class SimCLRGram(nn.Module):
