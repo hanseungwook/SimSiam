@@ -110,7 +110,7 @@ def gram_loss_1neg(z1, z2, temperature=0.5):
     # Shape: 2N
     dsq_pos = torch.sum((z1-z2)**2, dim=1).repeat(2)
     # Shape: 2N
-    dsq_neg = torch.cat([torch.sum((z1-z2_shuff)**2, dim=0), torch.sum((z1_shuff-z2)**2, dim=0)], dim=0)
+    dsq_neg = torch.cat([torch.sum((z1-z2_shuff)**2, dim=1), torch.sum((z1_shuff-z2)**2, dim=1)], dim=0)
 
     sigma = torch.sqrt(torch.median(torch.cat([dsq_pos, dsq_neg]))).item()
     positives = gaussian_gramian(dsq_pos, sigma)
