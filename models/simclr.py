@@ -95,6 +95,32 @@ def gram_loss_mean(z1, z2, temperature=0.5):
 
     return loss / (2 * N)
 
+# Gram ratio loss with negatives as 1 other mismatched pair (randomly assigned per batch)
+def gram_loss_1neg(z1, z2, temperature=0.5):
+    N, Z = z1.shape 
+    device = z1.device 
+
+    z1 = F.normalize(z1, dim=1)
+    z2 = F.normalize(z2, dim=1)
+
+    z1_shuff = z1[torch.randperm(z1.shape[0])]
+    z2_shuff = z2[torch.randperm(z2.shape[0])]
+
+    # Gaussian kernel
+    # Shape: 2N
+    dsq_pos = torch.sum((z1-z2)**2, dim=1).repeat(2)
+    # Shape: 2N
+    dsq_neg = torch.cat([torch.sum((z1-z2_shuff)**2, dim=0), torch.sum((z1_shuff-z2)**2, dim=0)], dim=0)
+
+    sigma = torch.sqrt(torch.median(torch.cat([dsq_pos, dsq_neg]))).item()
+    positives = gaussian_gramian(dsq_pos, sigma)
+    negatives = gaussian_gramian(dsq_neg, sigma)
+
+    # Cosine as ratio
+    loss = -1.0 * (torch.log(positives) - torch.log(negatives)).sum()
+
+    return loss / (2 * N)
+
 ############################################################################
 # GramNet Ratio Loss & Utilies
 ############################################################################
@@ -352,7 +378,8 @@ class SimCLRGram(nn.Module):
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
 
-        loss = gram_loss_mean(z1, z2)
+        # loss = gram_loss_mean(z1, z2)
+        loss = gram_loss_1neg(z1, z2)
         return {'loss':loss, 'loss_gram': loss}
 
 # SimCLR + discriminator for learning to estimate kl divergence btw p (z1) and q (z2)
