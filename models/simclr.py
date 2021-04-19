@@ -398,7 +398,7 @@ class SimCLRVAE(nn.Module):
 
         return {'loss': loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
 
-    def reparameterize(self, mu: Tensor, logvar: Tensor) -> Tensor:
+    def reparameterize(self, mu, logvar):
         """
         Reparameterization trick to sample from N(mu, var) from
         N(0,1).
