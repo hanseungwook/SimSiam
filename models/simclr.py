@@ -372,25 +372,18 @@ class SimCLRVAE(nn.Module):
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
 
-        z1_mu, z1_var = self.projector_mu(z1), self.projector_var(z1)
-        z2_mu, z2_var = self.projector_mu(z2), self.projector_var(z2)
-
-        # Calculate positive pair loss
-        # loss = gram_loss_mean(z1, z2)
-
-        # Calculate KL divergence between z1, z2, gaussian
-        z1_logvar = torch.log(z1_var)
-        z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_mu.pow(2) - z1_logvar.exp())
-        
-        z2_logvar = torch.log(z2_var)
-        z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_mu.pow(2) - z2_logvar.exp())
-
-        loss_kl = z1_kl * 0.5 + z2_kl * 0.5
-        
+        z1_mu, z1_logvar = self.projector_mu(z1), self.projector_var(z1)
+        z2_mu, z2_logvar = self.projector_mu(z2), self.projector_var(z2)
 
         # Reparameterize
         z1 = self.reparameterize(z1_mu, z1_logvar)
         z2 = self.reparameterize(z2_mu, z2_logvar)
+
+        # Calculate KL divergence between z1, z2, gaussian
+        z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_mu.pow(2) - z1_logvar.exp())        
+        z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_mu.pow(2) - z2_logvar.exp())
+
+        loss_kl = z1_kl * 0.5 + z2_kl * 0.5
 
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
         loss_pos = - F.cosine_similarity(z1, z2, dim=-1).mean()
