@@ -359,10 +359,12 @@ class SimCLRVAE(nn.Module):
         super().__init__()
         
         self.backbone = backbone
-        self.projector_mu = projection_MLP(backbone.output_dim, out_dim=proj_dim)
-        self.projector_var = projection_MLP(backbone.output_dim, out_dim=proj_dim)
+        self.projector = projection_MLP(backbone.output_dim, out_dim=proj_dim)
+        self.projector_mu = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
+        self.projector_var = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
         self.encoder = nn.Sequential(
-            self.backbone
+            self.backbone,
+            self.projector
         )
         
 
@@ -374,7 +376,7 @@ class SimCLRVAE(nn.Module):
         z2_mu, z2_var = self.projector_mu(z2), F.softplus(self.projector_var(z2))
 
         # Calculate positive pair loss
-        loss = gram_loss_mean(z1, z2)
+        # loss = gram_loss_mean(z1, z2)
 
         # Calculate KL divergence between z1, z2, gaussian
         z1_logvar = torch.log(z1_var)
@@ -385,11 +387,26 @@ class SimCLRVAE(nn.Module):
 
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
-        loss_pos = - F.cosine_similarity(z1_mu, z2_mu, dim=-1).mean()
+
+        z1 = self.reparameterize(z1_mu, z1_logvar)
+        z2 = self.reparameterize(z2_mu, z2_logvar)
+
+        loss_pos = - F.cosine_similarity(z1, z2, dim=-1).mean()
         loss = loss_kl + loss_pos
 
         return {'loss': loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
 
+    def reparameterize(self, mu: Tensor, logvar: Tensor) -> Tensor:
+        """
+        Reparameterization trick to sample from N(mu, var) from
+        N(0,1).
+        :param mu: (Tensor) Mean of the latent Gaussian [B x D]
+        :param logvar: (Tensor) Standard deviation of the latent Gaussian [B x D]
+        :return: (Tensor) [B x D]
+        """
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return eps * std + mu
 
 class SimCLRGram(nn.Module):
     def __init__(self, backbone=resnet50(), proj_dim=128):
