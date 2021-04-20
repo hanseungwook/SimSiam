@@ -375,9 +375,9 @@ class SimCLRVAE(nn.Module):
 
         loss_pos = - F.cosine_similarity(z1, z2, dim=-1).mean()
 
-        z1 = self.decoder1(z1)
-        z2 = self.decoder1(z2)
-        
+        # z1 = self.decoder1(z1)
+        # z2 = self.decoder1(z2)
+
         z1_mu, z1_logvar = self.projector_mu(z1), self.projector_var(z1)
         z2_mu, z2_logvar = self.projector_mu(z2), self.projector_var(z2)
 
