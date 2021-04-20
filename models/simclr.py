@@ -406,7 +406,7 @@ class SimCLRVAE(nn.Module):
         :return: (Tensor) [B x D]
         """
         std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std) * 0.001
+        eps = torch.randn_like(std)
         return eps * std + mu
 
 class SimCLRGram(nn.Module):
