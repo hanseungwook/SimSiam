@@ -395,7 +395,7 @@ class SimCLRVAE(nn.Module):
         
         loss = loss_kl + loss_simclr
 
-        return {'loss': loss, 'loss/simclr': loss_pos, 'loss/kl': loss_kl}
+        return {'loss': loss, 'loss/simclr': loss_simclr, 'loss/kl': loss_kl}
 
     def reparameterize(self, mu, logvar):
         """
