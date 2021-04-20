@@ -373,7 +373,7 @@ class SimCLRVAE(nn.Module):
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
 
-        loss_pos = - F.cosine_similarity(z1, z2, dim=-1).mean()
+        loss_simclr = NT_XentLoss(z1, z2)
 
         # z1 = self.decoder1(z1)
         # z2 = self.decoder1(z2)
@@ -393,9 +393,9 @@ class SimCLRVAE(nn.Module):
 
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
         
-        loss = loss_kl + loss_pos
+        loss = loss_kl + loss_simclr
 
-        return {'loss': loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
+        return {'loss': loss, 'loss/simclr': loss_pos, 'loss/kl': loss_kl}
 
     def reparameterize(self, mu, logvar):
         """
