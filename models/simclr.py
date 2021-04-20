@@ -388,7 +388,7 @@ class SimCLRVAE(nn.Module):
 
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
         loss_pos = - F.cosine_similarity(self.decoder1(z1), self.decoder2(z2), dim=-1).mean()
-        loss = loss_kl + loss_pos
+        loss = loss_kl + z1.shape[0] * loss_pos
 
         return {'loss': loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
 
@@ -401,7 +401,7 @@ class SimCLRVAE(nn.Module):
         :return: (Tensor) [B x D]
         """
         std = torch.exp(0.5 * logvar)
-        eps = torch.randn_like(std) * 0.001
+        eps = torch.randn_like(std)
         return eps * std + mu
 
 class SimCLRGram(nn.Module):
