@@ -381,8 +381,8 @@ class SimCLRVAE(nn.Module):
         z2_mu, z2_logvar = self.projector_mu(z2), self.projector_var(z2)
 
         # Reparameterize
-        z1 = self.reparameterize(z1_mu, z1_logvar)
-        z2 = self.reparameterize(z2_mu, z2_logvar)
+        # z1 = self.reparameterize(z1_mu, z1_logvar)
+        # z2 = self.reparameterize(z2_mu, z2_logvar)
 
         # Calculate KL divergence between z1, z2, gaussian
         z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_mu.pow(2) - z1_logvar.exp())        
@@ -392,7 +392,7 @@ class SimCLRVAE(nn.Module):
         loss_simclr = NT_XentLoss(z1, z2)
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
         
-        loss = loss_kl + loss_simclr
+        loss = loss_kl + z1.shape[0] * loss_simclr
 
         return {'loss': loss, 'loss/simclr': loss_simclr, 'loss/kl': loss_kl}
 
