@@ -366,8 +366,9 @@ class SimCLRVAE(nn.Module):
             self.backbone,
             self.projector
         )
+        self.decoder1 = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
+        self.decoder2 = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
         
-
     def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=0.0):
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
@@ -386,7 +387,7 @@ class SimCLRVAE(nn.Module):
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
 
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
-        loss_pos = - F.cosine_similarity(z1, z2, dim=-1).mean()
+        loss_pos = - F.cosine_similarity(self.decoder1(z1), self.decoder2(z2), dim=-1).mean()
         loss = loss_kl + loss_pos
 
         return {'loss': loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
