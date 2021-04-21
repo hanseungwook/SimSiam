@@ -366,7 +366,7 @@ class SimCLRVAE(nn.Module):
             self.backbone,
             self.projector
         )
-        self.decoder1 = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
+        self.decoder = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
         # self.decoder2 = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
         
     def forward(self, x1, x2, sym_loss_weight=1.0, logistic_loss_weight=0.0):
@@ -380,13 +380,16 @@ class SimCLRVAE(nn.Module):
         z1_mu, z1_logvar = self.projector_mu(z1), self.projector_var(z1)
         z2_mu, z2_logvar = self.projector_mu(z2), self.projector_var(z2)
 
+        # Calculate KL divergence between z1, z2, gaussian
+        z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_mu.pow(2) - z1_logvar.exp())        
+        z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_mu.pow(2) - z2_logvar.exp())
+
         # Reparameterize
         z1 = self.reparameterize(z1_mu, z1_logvar)
         z2 = self.reparameterize(z2_mu, z2_logvar)
 
-        # Calculate KL divergence between z1, z2, gaussian
-        z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_mu.pow(2) - z1_logvar.exp())        
-        z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_mu.pow(2) - z2_logvar.exp())
+        z1 = self.decoder(z1)
+        # z2 = self.decoder2(z2)
 
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
         loss_simclr = NT_XentLoss(z1, z2)
