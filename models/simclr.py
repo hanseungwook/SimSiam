@@ -388,16 +388,18 @@ class SimCLRVAE(nn.Module):
         z1_tril_mat[:, tril_indices[0], tril_indices[1]] = z1_tril_vec
         z2_tril_mat[:, tril_indices[0], tril_indices[1]] = z2_tril_vec
 
-        # Soft-plusing diagonal elements
-        z1_tril_mat[:, range(N), range(N)] = F.softplus(z1_tril_mat.diagonal(dim1=-2, dim2=-1))
-        z2_tril_mat[:, range(N), range(N)] = F.softplus(z2_tril_mat.diagonal(dim1=-2, dim2=-1))
+        # Soft-plusing diagonal elements (Need to clone b/c of in-place operations and need to preserve original items)
+        z1_tril_mat_c = z1_tril_mat.clone()
+        z2_tril_mat_c = z2_tril_mat.clone()
+        z1_tril_mat_c[:, range(N), range(N)] = F.softplus(z1_tril_mat.diagonal(dim1=-2, dim2=-1))
+        z2_tril_mat_c[:, range(N), range(N)] = F.softplus(z2_tril_mat.diagonal(dim1=-2, dim2=-1))
 
         # Pytorch internal method of KL
-        z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=z1_tril_mat)
+        z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=z1_tril_mat_c)
         gaus_dist1 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
         z1_kl = torch.distributions.kl.kl_divergence(z1_dist, gaus_dist1)
 
-        z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=z2_tril_mat)
+        z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=z2_tril_mat_c)
         gaus_dist2 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
         z2_kl = torch.distributions.kl.kl_divergence(z2_dist, gaus_dist2)
 
