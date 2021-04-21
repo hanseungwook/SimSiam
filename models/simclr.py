@@ -423,10 +423,10 @@ class SimCLRVAE(nn.Module):
         # loss_simclr = NT_XentLoss(z1, z2)
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
         
-        loss = loss_kl 
+        loss = loss_kl + loss_pos
         # + z1.shape[0] * loss_simclr
-        return {'loss': loss, 'loss/kl': loss_kl}
-        # return {'loss': loss, 'loss/simclr': loss_simclr, 'loss/kl': loss_kl}
+        # return {'loss': loss, 'loss/kl': loss_kl}
+        return {'loss': loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
 
     def reparameterize(self, mu, logvar):
         """
