@@ -382,7 +382,7 @@ class SimCLRVAE(nn.Module):
         z2_mu, z2_tril_vec = self.projector_mu(z2), self.projector_var(z2)
 
         # Figure this out
-        # Convert lower triangle in vector form to matrix form
+        # Convert lower triangular matrix in vector form to matrix form
         tril_indices = torch.tril_indices(row=N, col=N, offset=0)
         z1_tril_mat = z2_tril_mat = torch.zeros((B, N, N), device=device)
         z1_tril_mat[:, tril_indices[0], tril_indices[1]] = z1_tril_vec
@@ -396,11 +396,11 @@ class SimCLRVAE(nn.Module):
 
         # Pytorch internal method of KL
         z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=z1_tril_mat_c)
-        gaus_dist1 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
+        gaus_dist1 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
         z1_kl = torch.distributions.kl.kl_divergence(z1_dist, gaus_dist1)
 
         z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=z2_tril_mat_c)
-        gaus_dist2 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
+        gaus_dist2 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
         z2_kl = torch.distributions.kl.kl_divergence(z2_dist, gaus_dist2)
 
         # Exact numerical calculation of KL
@@ -419,6 +419,7 @@ class SimCLRVAE(nn.Module):
         # z2 = self.reparameterize(z2_mu, z2_logvar)
 
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
+        loss_pos = - F.cosine_similarity(z1_mu, z2_mu)
         # loss_simclr = NT_XentLoss(z1, z2)
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
         
