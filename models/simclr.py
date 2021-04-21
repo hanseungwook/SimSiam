@@ -361,7 +361,8 @@ class SimCLRVAE(nn.Module):
         self.backbone = backbone
         self.projector = projection_MLP(backbone.output_dim, out_dim=proj_dim)
         self.projector_mu = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
-        self.projector_var = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
+        # Two separate layers for variance 
+        self.projector_var = projection_MLP(in_dim=proj_dim, out_dim=proj_dim*(proj_dim+1)/2)
         self.encoder = nn.Sequential(
             self.backbone,
             self.projector
@@ -373,31 +374,57 @@ class SimCLRVAE(nn.Module):
         z1 = self.encoder(x1)
         z2 = self.encoder(x2)
 
-        
-        # z1 = self.decoder1(z1)
-        # z2 = self.decoder1(z2)
+        # Batch and output dimensionality
+        B, N = z1.shape
+        device = z1.device
 
-        z1_mu, z1_logvar = self.projector_mu(z1), self.projector_var(z1)
-        z2_mu, z2_logvar = self.projector_mu(z2), self.projector_var(z2)
+        z1_mu, z1_tril_vec = self.projector_mu(z1), self.projector_var(z1)
+        z2_mu, z2_tril_vec = self.projector_mu(z2), self.projector_var(z2)
 
-        # Calculate KL divergence between z1, z2, gaussian
-        z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_mu.pow(2) - z1_logvar.exp())        
-        z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_mu.pow(2) - z2_logvar.exp())
+        # Figure this out
+        # Convert lower triangle in vector form to matrix form
+        tril_indices = torch.tril_indices(row=N, col=N, offset=0)
+        z1_tril_mat = z2_tril_mat = torch.zeros((B, N, N), device=device)
+        z1_tril_mat[:, tril_indices[0], tril_indices[1]] = z1_tril_vec
+        z2_tril_mat[:, tril_indices[0], tril_indices[1]] = z2_tril_vec
+
+        # Pytorch internal method of KL
+        z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=z1_tril_mat)
+        gaus_dist1 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
+        z1_kl = torch.distributions.kl.kl_divergence(z1_dist, gaus_dist1)
+
+        z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=z2_tril_mat)
+        gaus_dist2 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
+        z2_kl = torch.distributions.kl.kl_divergence(z2_dist, gaus_dist2)
+
+        # 
+        # KL  (1/2 * (log det(cov1)/det(cov2))
+
+        # Exact numerical calculation of KL
+        # Soft-plusing diagonal elements
+        # z1_var_mat[:, range(N), range(N)] = F.softplus(z1_var_mat.diagonal(dim1=-2, dim2=-1))
+        # z2_var_mat[:, range(N), range(N)] = F.softplus(z2_var_mat.diagonal(dim1=-2, dim2=-1))
+
+        # Get covariance matrix from L => L * L^transpose (exclude batch dimension in transpose)
+        # z1_cov = torch.matmul(z1_var_mat, torch.transpose(z1_var_mat, 1, 2))
+        # z2_cov = torch.matmul(z2_var_mat, torch.transpose(z2_var_mat, 1, 2))
+
+        # z1_kl = 0.5 * torch.sum(-torch.logdet(z1_cov) - N + torch.trace(z1_cov) + torch.matmul((z2_mu - z1_mu).T, (z2_mu - z1_mu)))
+        # z2_kl = 0.5 * torch.sum(-torch.logdet(z2_cov) - N + torch.trace(z2_cov) + torch.matmul((z1_mu - z2_mu).T, (z1_mu - z2_mu)))
+
 
         # Reparameterize
-        z1 = self.reparameterize(z1_mu, z1_logvar)
-        z2 = self.reparameterize(z2_mu, z2_logvar)
-
-        z1 = self.decoder1(z1)
-        z2 = self.decoder2(z2)
+        # z1 = self.reparameterize(z1_mu, z1_logvar)
+        # z2 = self.reparameterize(z2_mu, z2_logvar)
 
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
-        loss_simclr = NT_XentLoss(z1, z2)
+        # loss_simclr = NT_XentLoss(z1, z2)
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
         
-        loss = loss_kl + z1.shape[0] * loss_simclr
-
-        return {'loss': loss, 'loss/simclr': loss_simclr, 'loss/kl': loss_kl}
+        loss = loss_kl 
+        # + z1.shape[0] * loss_simclr
+        return {'loss': loss, 'loss/kl': loss_kl}
+        # return {'loss': loss, 'loss/simclr': loss_simclr, 'loss/kl': loss_kl}
 
     def reparameterize(self, mu, logvar):
         """
