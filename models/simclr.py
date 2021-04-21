@@ -388,6 +388,10 @@ class SimCLRVAE(nn.Module):
         z1_tril_mat[:, tril_indices[0], tril_indices[1]] = z1_tril_vec
         z2_tril_mat[:, tril_indices[0], tril_indices[1]] = z2_tril_vec
 
+        # Soft-plusing diagonal elements
+        z1_tril_mat[:, range(N), range(N)] = F.softplus(z1_tril_mat.diagonal(dim1=-2, dim2=-1))
+        z2_tril_mat[:, range(N), range(N)] = F.softplus(z2_tril_mat.diagonal(dim1=-2, dim2=-1))
+
         # Pytorch internal method of KL
         z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=z1_tril_mat)
         gaus_dist1 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
@@ -397,13 +401,8 @@ class SimCLRVAE(nn.Module):
         gaus_dist2 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
         z2_kl = torch.distributions.kl.kl_divergence(z2_dist, gaus_dist2)
 
-        # 
-        # KL  (1/2 * (log det(cov1)/det(cov2))
-
         # Exact numerical calculation of KL
-        # Soft-plusing diagonal elements
-        # z1_var_mat[:, range(N), range(N)] = F.softplus(z1_var_mat.diagonal(dim1=-2, dim2=-1))
-        # z2_var_mat[:, range(N), range(N)] = F.softplus(z2_var_mat.diagonal(dim1=-2, dim2=-1))
+
 
         # Get covariance matrix from L => L * L^transpose (exclude batch dimension in transpose)
         # z1_cov = torch.matmul(z1_var_mat, torch.transpose(z1_var_mat, 1, 2))
