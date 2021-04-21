@@ -418,8 +418,12 @@ class SimCLRVAE(nn.Module):
         # z1 = self.reparameterize(z1_mu, z1_logvar)
         # z2 = self.reparameterize(z2_mu, z2_logvar)
 
+        # Reparameterize
+        z1 = z1_dist.rsample()
+        z2 = z2_dist.rsample()
+
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
-        loss_pos = - F.cosine_similarity(z1_mu, z2_mu)
+        loss_pos = - F.cosine_similarity(z1, z2)
         # loss_simclr = NT_XentLoss(z1, z2)
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
         
