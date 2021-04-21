@@ -362,7 +362,7 @@ class SimCLRVAE(nn.Module):
         self.projector = projection_MLP(backbone.output_dim, out_dim=proj_dim)
         self.projector_mu = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
         # Two separate layers for variance 
-        self.projector_var = projection_MLP(in_dim=proj_dim, out_dim=proj_dim*(proj_dim+1)/2)
+        self.projector_var = projection_MLP(in_dim=proj_dim, out_dim=int(proj_dim*(proj_dim+1)/2))
         self.encoder = nn.Sequential(
             self.backbone,
             self.projector
