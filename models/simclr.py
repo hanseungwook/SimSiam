@@ -423,8 +423,8 @@ class SimCLRVAE(nn.Module):
         # z2_kl = 0.5 * torch.sum(-torch.logdet(z2_cov) - N + torch.trace(z2_cov) + torch.matmul((z1_mu - z2_mu).T, (z1_mu - z2_mu)))
 
         # Calculate KL divergence between z1, z2, gaussian with the same mean
-        z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_logvar.exp())
-        z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_logvar.exp())
+        z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_logvar.exp(), dim=-1).mean()
+        z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_logvar.exp(), dim=-1).mean()
 
         # Reparameterize with same eps
         z1, z2 = self.reparameterize(z1_mu_norm, z1_logvar, z2_mu_norm, z2_logvar)
