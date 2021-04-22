@@ -362,7 +362,7 @@ class SimCLRVAE(nn.Module):
         self.projector = projection_MLP(backbone.output_dim, out_dim=proj_dim)
         self.projector_mu = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
         # Two separate layers for variance 
-        self.projector_var = projection_MLP(in_dim=proj_dim, out_dim=int(proj_dim*(proj_dim+1)/2))
+        self.projector_var = projection_MLP(in_dim=proj_dim, out_dim=proj_dim)
         self.encoder = nn.Sequential(
             self.backbone,
             self.projector
@@ -378,33 +378,39 @@ class SimCLRVAE(nn.Module):
         B, N = z1.shape
         device = z1.device
 
-        z1_mu, z1_tril_vec = self.projector_mu(z1), self.projector_var(z1)
-        z2_mu, z2_tril_vec = self.projector_mu(z2), self.projector_var(z2)
+        z1_mu, z1_var = self.projector_mu(z1), torch.sigmoid(self.projector_var(z1))
+        z2_mu, z2_var = self.projector_mu(z2), torch.sigmoid(self.projector_var(z2))
 
-        # Figure this out
-        # Convert lower triangular matrix in vector form to matrix form
-        tril_indices = torch.tril_indices(row=N, col=N, offset=0)
-        z1_tril_mat = z2_tril_mat = torch.zeros((B, N, N), device=device)
-        z1_tril_mat[:, tril_indices[0], tril_indices[1]] = z1_tril_vec
-        z2_tril_mat[:, tril_indices[0], tril_indices[1]] = z2_tril_vec
+        var_multiplier = 0.1
+        z1_logvar = torch.log(z1_var * var_multiplier)
+        z2_logvar = torch.log(z2_var * var_multiplier)
 
-        # Soft-plusing diagonal elements (Need to clone b/c of in-place operations and need to preserve original items)
-        z1_tril_mat_c = z1_tril_mat.clone()
-        z2_tril_mat_c = z2_tril_mat.clone()
-        z1_tril_mat_c[:, range(N), range(N)] = F.softplus(z1_tril_mat.diagonal(dim1=-2, dim2=-1))
-        z2_tril_mat_c[:, range(N), range(N)] = F.softplus(z2_tril_mat.diagonal(dim1=-2, dim2=-1))
+        # z1_mu, z1_tril_vec = self.projector_mu(z1), self.projector_var(z1)
+        # z2_mu, z2_tril_vec = self.projector_mu(z2), self.projector_var(z2)
+
+        # # Figure this out
+        # # Convert lower triangular matrix in vector form to matrix form
+        # tril_indices = torch.tril_indices(row=N, col=N, offset=0)
+        # z1_tril_mat = z2_tril_mat = torch.zeros((B, N, N), device=device)
+        # z1_tril_mat[:, tril_indices[0], tril_indices[1]] = z1_tril_vec
+        # z2_tril_mat[:, tril_indices[0], tril_indices[1]] = z2_tril_vec
+
+        # # Soft-plusing diagonal elements (Need to clone b/c of in-place operations and need to preserve original items)
+        # z1_tril_mat_c = z1_tril_mat.clone()
+        # z2_tril_mat_c = z2_tril_mat.clone()
+        # z1_tril_mat_c[:, range(N), range(N)] = F.softplus(z1_tril_mat.diagonal(dim1=-2, dim2=-1))
+        # z2_tril_mat_c[:, range(N), range(N)] = F.softplus(z2_tril_mat.diagonal(dim1=-2, dim2=-1))
 
         # Pytorch internal method of KL
-        z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=z1_tril_mat_c)
-        gaus_dist1 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
-        z1_kl = torch.distributions.kl.kl_divergence(z1_dist, gaus_dist1)
+        # z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=z1_tril_mat_c)
+        # gaus_dist1 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
+        # z1_kl = torch.distributions.kl.kl_divergence(z1_dist, gaus_dist1)
 
-        z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=z2_tril_mat_c)
-        gaus_dist2 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
-        z2_kl = torch.distributions.kl.kl_divergence(z2_dist, gaus_dist2)
+        # z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=z2_tril_mat_c)
+        # gaus_dist2 = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, scale_tril=torch.diag(torch.ones(N, device=device)))
+        # z2_kl = torch.distributions.kl.kl_divergence(z2_dist, gaus_dist2)
 
         # Exact numerical calculation of KL
-
 
         # Get covariance matrix from L => L * L^transpose (exclude batch dimension in transpose)
         # z1_cov = torch.matmul(z1_var_mat, torch.transpose(z1_var_mat, 1, 2))
@@ -413,21 +419,24 @@ class SimCLRVAE(nn.Module):
         # z1_kl = 0.5 * torch.sum(-torch.logdet(z1_cov) - N + torch.trace(z1_cov) + torch.matmul((z2_mu - z1_mu).T, (z2_mu - z1_mu)))
         # z2_kl = 0.5 * torch.sum(-torch.logdet(z2_cov) - N + torch.trace(z2_cov) + torch.matmul((z1_mu - z2_mu).T, (z1_mu - z2_mu)))
 
+        # Calculate KL divergence between z1, z2, gaussian with the same mean
+        z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_logvar.exp())
+        z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_logvar.exp())
 
         # Reparameterize
-        # z1 = self.reparameterize(z1_mu, z1_logvar)
-        # z2 = self.reparameterize(z2_mu, z2_logvar)
+        z1 = self.reparameterize(z1_mu, z1_logvar)
+        z2 = self.reparameterize(z2_mu, z2_logvar)
 
         # Reparameterize
-        z1 = z1_dist.rsample()
-        z2 = z2_dist.rsample()
+        # z1 = z1_dist.rsample()
+        # z2 = z2_dist.rsample()
 
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
         loss_pos = - F.cosine_similarity(z1, z2)
         # loss_simclr = NT_XentLoss(z1, z2)
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
         
-        loss = loss_kl + loss_pos
+        loss = loss_kl + loss_pos * z1.shape[-1]
         # + z1.shape[0] * loss_simclr
         # return {'loss': loss, 'loss/kl': loss_kl}
         return {'loss': loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
