@@ -423,9 +423,9 @@ class SimCLRVAE(nn.Module):
         z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_logvar.exp())
         z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_logvar.exp())
 
-        # Reparameterize
-        z1 = self.reparameterize(z1_mu, z1_logvar)
-        z2 = self.reparameterize(z2_mu, z2_logvar)
+        # Reparameterize with same eps
+        z1, z2 = self.reparameterize(z1_mu, z1_logvar, z2_mu, z2_logvar)
+        # z2 = self.reparameterize(z2_mu, z2_logvar)
 
         # Reparameterize
         # z1 = z1_dist.rsample()
@@ -441,7 +441,7 @@ class SimCLRVAE(nn.Module):
         # return {'loss': loss, 'loss/kl': loss_kl}
         return {'loss': loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
 
-    def reparameterize(self, mu, logvar):
+    def reparameterize(self, mu1, logvar1, mu2, logvar2):
         """
         Reparameterization trick to sample from N(mu, var) from
         N(0,1).
@@ -449,9 +449,10 @@ class SimCLRVAE(nn.Module):
         :param logvar: (Tensor) Standard deviation of the latent Gaussian [B x D]
         :return: (Tensor) [B x D]
         """
-        std = torch.exp(0.5 * logvar)
+        std1 = torch.exp(0.5 * logvar1)
+        std2 = torch.exp(0.5 * logvar2)
         eps = torch.randn_like(std)
-        return eps * std + mu
+        return eps * std1 + mu1, eps * std2 + mu2
 
 class SimCLRGram(nn.Module):
     def __init__(self, backbone=resnet50(), proj_dim=128):
