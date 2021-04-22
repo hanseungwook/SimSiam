@@ -381,6 +381,9 @@ class SimCLRVAE(nn.Module):
         z1_mu, z1_var = self.projector_mu(z1), torch.sigmoid(self.projector_var(z1))
         z2_mu, z2_var = self.projector_mu(z2), torch.sigmoid(self.projector_var(z2))
 
+        z1_mu_norm = (z1_mu - z1_mu.mean(0)) / z1_mu.std(0)
+        z2_mu_norm = (z2_mu - z2_mu.mean(0)) / z2_mu.std(0)
+        
         var_multiplier = 0.1
         z1_logvar = torch.log(z1_var * var_multiplier)
         z2_logvar = torch.log(z2_var * var_multiplier)
@@ -424,7 +427,7 @@ class SimCLRVAE(nn.Module):
         z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_logvar.exp())
 
         # Reparameterize with same eps
-        z1, z2 = self.reparameterize(z1_mu, z1_logvar, z2_mu, z2_logvar)
+        z1, z2 = self.reparameterize(z1_mu_norm, z1_logvar, z2_mu_norm, z2_logvar)
         # z2 = self.reparameterize(z2_mu, z2_logvar)
 
         # Reparameterize
