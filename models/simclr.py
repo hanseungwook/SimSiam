@@ -454,7 +454,7 @@ class SimCLRVAE(nn.Module):
         """
         std1 = torch.exp(0.5 * logvar1)
         std2 = torch.exp(0.5 * logvar2)
-        eps = torch.randn_like(std)
+        eps = torch.randn_like(std1)
         return eps * std1 + mu1, eps * std2 + mu2
 
 class SimCLRGram(nn.Module):
