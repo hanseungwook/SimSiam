@@ -381,12 +381,15 @@ class SimCLRVAE(nn.Module):
         z1_mu, z1_var = self.projector_mu(z1), torch.sigmoid(self.projector_var(z1))
         z2_mu, z2_var = self.projector_mu(z2), torch.sigmoid(self.projector_var(z2))
 
-        z1_mu_norm = (z1_mu - z1_mu.mean(0)) / z1_mu.std(0)
-        z2_mu_norm = (z2_mu - z2_mu.mean(0)) / z2_mu.std(0)
+        # z1_mu_norm = (z1_mu - z1_mu.mean(0)) / z1_mu.std(0)
+        # z2_mu_norm = (z2_mu - z2_mu.mean(0)) / z2_mu.std(0)
         
         var_multiplier = 0.1
-        z1_logvar = torch.log(z1_var * var_multiplier)
-        z2_logvar = torch.log(z2_var * var_multiplier)
+        z1_var *= var_multiplier
+        z2_var *= var_multiplier
+
+        z1_logvar = torch.log(z1_var)
+        z2_logvar = torch.log(z2_var)
 
         # z1_mu, z1_tril_vec = self.projector_mu(z1), self.projector_var(z1)
         # z2_mu, z2_tril_vec = self.projector_mu(z2), self.projector_var(z2)
@@ -426,8 +429,13 @@ class SimCLRVAE(nn.Module):
         z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_logvar.exp(), dim=-1).mean()
         z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_logvar.exp(), dim=-1).mean()
 
+        z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, covariance_matrix=torch.diag_embed(z1_var))
+        z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, covariance_matrix=torch.diag_embed(z2_var))
+        z1_z2_kl = torch.distributions.kl.kl_divergence(z1_dist, z2_dist)
+        z2_z1_kl = torch.distributions.kl.kl_divergence(z2_dist, z1_dist)
+
         # Reparameterize with same eps
-        z1, z2 = self.reparameterize(z1_mu_norm, z1_logvar, z2_mu_norm, z2_logvar)
+        # z1, z2 = self.reparameterize(z1_mu_norm, z1_logvar, z2_mu_norm, z2_logvar)
         # z2 = self.reparameterize(z2_mu, z2_logvar)
 
         # Reparameterize
@@ -437,12 +445,12 @@ class SimCLRVAE(nn.Module):
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
         # loss_pos = - F.cosine_similarity(z1, z2)
         # loss_simclr = NT_XentLoss(z1, z2)
-        loss_pos = gaussian_kernel_pos_loss(z1, z2)
+        loss_pos_kl = z1_z2_kl * 0.5 + z2_z1_kl * 0.5
         
-        loss = loss_kl + loss_pos * z1.shape[-1]
+        loss = loss_kl * 0.5 + loss_pos_kl * 0.5
         # + z1.shape[0] * loss_simclr
         # return {'loss': loss, 'loss/kl': loss_kl}
-        return {'loss': loss, 'loss/pos': loss_pos, 'loss/kl': loss_kl}
+        return {'loss': loss, 'loss/pos_kl': loss_pos_kl, 'loss/kl': loss_kl}
 
     def reparameterize(self, mu1, logvar1, mu2, logvar2):
         """
