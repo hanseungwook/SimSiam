@@ -385,8 +385,8 @@ class SimCLRVAE(nn.Module):
         # z2_mu_norm = (z2_mu - z2_mu.mean(0)) / z2_mu.std(0)
         
         var_multiplier = 0.1
-        z1_var *= var_multiplier
-        z2_var *= var_multiplier
+        z1_var = z1_var * var_multiplier
+        z2_var = z1_var * var_multiplier
 
         z1_logvar = torch.log(z1_var)
         z2_logvar = torch.log(z2_var)
