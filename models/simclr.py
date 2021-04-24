@@ -381,8 +381,8 @@ class SimCLRVAE(nn.Module):
         z1_mu, z1_var = self.projector_mu(z1), torch.sigmoid(self.projector_var(z1))
         z2_mu, z2_var = self.projector_mu(z2), torch.sigmoid(self.projector_var(z2))
 
-        # z1_mu_norm = (z1_mu - z1_mu.mean(0)) / z1_mu.std(0)
-        # z2_mu_norm = (z2_mu - z2_mu.mean(0)) / z2_mu.std(0)
+        z1_mu_norm = (z1_mu - z1_mu.mean(0)) / z1_mu.std(0)
+        z2_mu_norm = (z2_mu - z2_mu.mean(0)) / z2_mu.std(0)
         
         var_multiplier = 0.1
         z1_var = z1_var * var_multiplier
@@ -429,8 +429,8 @@ class SimCLRVAE(nn.Module):
         z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_logvar.exp(), dim=-1).mean()
         z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_logvar.exp(), dim=-1).mean()
 
-        z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, covariance_matrix=torch.diag_embed(z1_var))
-        z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, covariance_matrix=torch.diag_embed(z2_var))
+        z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu_norm, covariance_matrix=torch.diag_embed(z1_var))
+        z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu_norm, covariance_matrix=torch.diag_embed(z2_var))
         z1_z2_kl = torch.distributions.kl.kl_divergence(z1_dist, z2_dist).mean()
         z2_z1_kl = torch.distributions.kl.kl_divergence(z2_dist, z1_dist).mean()
 
