@@ -104,7 +104,7 @@ def gaussian_kernel_pos_loss(z1, z2, temperature=0.5):
 
     # Shape: 2N
     dsq_pos = torch.sum((z1-z2)**2, dim=1)
-    sigma = torch.sqrt(torch.median(torch.cat([dsq_pos]))).item()
+    sigma = torch.sqrt(torch.median(dsq_pos)).item()
     positives = gaussian_gramian(dsq_pos, sigma)
 
     loss = -1.0 * positives.mean()
@@ -435,9 +435,9 @@ class SimCLRVAE(nn.Module):
         # z2 = z2_dist.rsample()
 
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
-        loss_pos = - F.cosine_similarity(z1, z2)
+        # loss_pos = - F.cosine_similarity(z1, z2)
         # loss_simclr = NT_XentLoss(z1, z2)
-        # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)
+        loss_pos = gaussian_kernel_pos_loss(z1, z2)
         
         loss = loss_kl + loss_pos * z1.shape[-1]
         # + z1.shape[0] * loss_simclr
