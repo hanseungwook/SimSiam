@@ -431,8 +431,8 @@ class SimCLRVAE(nn.Module):
 
         z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu, covariance_matrix=torch.diag_embed(z1_var))
         z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu, covariance_matrix=torch.diag_embed(z2_var))
-        z1_z2_kl = torch.distributions.kl.kl_divergence(z1_dist, z2_dist)
-        z2_z1_kl = torch.distributions.kl.kl_divergence(z2_dist, z1_dist)
+        z1_z2_kl = torch.distributions.kl.kl_divergence(z1_dist, z2_dist).mean()
+        z2_z1_kl = torch.distributions.kl.kl_divergence(z2_dist, z1_dist).mean()
 
         # Reparameterize with same eps
         # z1, z2 = self.reparameterize(z1_mu_norm, z1_logvar, z2_mu_norm, z2_logvar)
