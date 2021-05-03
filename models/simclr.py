@@ -384,7 +384,7 @@ class SimCLRVAE(nn.Module):
         z1_mu_norm = (z1_mu - z1_mu.mean(0)) / z1_mu.std(0)
         z2_mu_norm = (z2_mu - z2_mu.mean(0)) / z2_mu.std(0)
         
-        var_multiplier = 0.1
+        var_multiplier = 0.2
         z1_logvar = torch.log(z1_var * var_multiplier)
         z2_logvar = torch.log(z2_var * var_multiplier)
 
@@ -423,8 +423,8 @@ class SimCLRVAE(nn.Module):
         # z2_kl = 0.5 * torch.sum(-torch.logdet(z2_cov) - N + torch.trace(z2_cov) + torch.matmul((z1_mu - z2_mu).T, (z1_mu - z2_mu)))
 
         # Calculate KL divergence between z1, z2, gaussian with the same mean
-        z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_logvar.exp(), dim=-1).mean()
-        z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_logvar.exp(), dim=-1).mean()
+        #z1_kl = -0.5 * torch.sum(1 + z1_logvar - z1_logvar.exp(), dim=-1).mean()
+        #z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_logvar.exp(), dim=-1).mean()
 
         # Reparameterize with same eps
         z1, z2 = self.reparameterize(z1_mu_norm, z1_logvar, z2_mu_norm, z2_logvar)
@@ -434,7 +434,8 @@ class SimCLRVAE(nn.Module):
         # z1 = z1_dist.rsample()
         # z2 = z2_dist.rsample()
 
-        loss_kl = z1_kl * 0.5 + z2_kl * 0.5
+        #loss_kl = z1_kl * 0.5 + z2_kl * 0.5
+        loss_kl = 0.0
         loss_pos = - F.cosine_similarity(z1, z2)
         # loss_simclr = NT_XentLoss(z1, z2)
         # loss_pos = gaussian_kernel_pos_loss(z1_mu, z2_mu)

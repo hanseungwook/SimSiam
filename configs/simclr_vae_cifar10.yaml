@@ -9,7 +9,9 @@ model:
   backbone: resnet18_cifar_variant1
   proj_dim: 128
 
-load_model: False
+load_model:
+  weights_path: /disk_c/han/SimSiam/experiments/simclr_vae_cifar10_barlow_kl_varmult_0.2_batchnorm_cos128_2eps_mean/simclr-vae-cifar10-experiment_20.pth
+  start_epoch: 20
 
 train:
   optimizer: 
