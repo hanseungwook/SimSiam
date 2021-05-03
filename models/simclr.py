@@ -427,8 +427,15 @@ class SimCLRVAE(nn.Module):
         #z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_logvar.exp(), dim=-1).mean()
 
         # Reparameterize with same eps
-        z1, z2 = self.reparameterize(z1_mu_norm, z1_logvar, z2_mu_norm, z2_logvar)
+        # z1, z2 = self.reparameterize(z1_mu_norm, z1_logvar, z2_mu_norm, z2_logvar)
+        z1, z2 = z1_mu_norm, z2_mu_norm
+
         # z2 = self.reparameterize(z2_mu, z2_logvar)
+
+        # Exponential decay of KL weight -- 
+        # No reparametrization, positive loss working directly on mu 
+        # Yes reparam with fixed noise (detaching logvar) but reduce noise
+
 
         # Reparameterize
         # z1 = z1_dist.rsample()
