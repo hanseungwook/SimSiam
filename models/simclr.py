@@ -5,6 +5,8 @@ from torchvision.models import resnet50
 
 from pdb import set_trace
 
+from tools.utils import check_nan_inf
+
 def NT_XentLoss(z1, z2, temperature=0.5):
     z1 = F.normalize(z1, dim=1)
     z2 = F.normalize(z2, dim=1)
@@ -427,8 +429,8 @@ class SimCLRVAE(nn.Module):
         #z2_kl = -0.5 * torch.sum(1 + z2_logvar - z2_logvar.exp(), dim=-1).mean()
 
         # Reparameterize with same eps
-        # z1, z2 = self.reparameterize(z1_mu_norm, z1_logvar, z2_mu_norm, z2_logvar)
-        z1, z2 = z1_mu_norm, z2_mu_norm
+        z1, z2 = self.reparameterize(z1_mu_norm, z1_logvar, z2_mu_norm, z2_logvar)
+        # z1, z2 = z1_mu_norm, z2_mu_norm
 
         # z2 = self.reparameterize(z2_mu, z2_logvar)
 
@@ -449,7 +451,12 @@ class SimCLRVAE(nn.Module):
         
         loss = loss_pos * z1.shape[-1]
         # + z1.shape[0] * loss_simclr
-        # return {'loss': loss, 'loss/kl': loss_kl}
+        
+        # Checking if loss is nan or inf (debug)
+        check_nan_inf(loss)
+
+        
+
         return {'loss': loss, 'loss/pos': loss_pos} #'loss/kl': loss_kl}
 
     def reparameterize(self, mu1, logvar1, mu2, logvar2):
