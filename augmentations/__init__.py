@@ -24,7 +24,7 @@ def get_aug(dataset, name='simsiam', image_size=224, train=True, train_classifie
     image_size, norm = dataset_img_size_dict[dataset], dataset_norm_dict[dataset]
 
     if train==True:
-        if name == 'simsiam' or name == 'simsiam_kd':
+        if name == 'simsiam' or name == 'simsiam_kd' or name == 'simsiam_nosg':
             augmentation = SimSiamTransform(image_size, mean_std=norm)
         elif name == 'simsiam_kd_anchor':
             augmentation = SimSiamTransform(image_size, mean_std=norm, anchor=True)

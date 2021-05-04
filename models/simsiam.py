@@ -134,6 +134,35 @@ class SimSiam(nn.Module):
         L = D(p1, z2) / 2 + D(p2, z1) / 2
         return {'loss': L}
 
+class SimSiamNoSG(nn.Module):
+    def __init__(self, backbone=[resnet50(), resnet50()]):
+        super().__init__()
+        
+        self.backbone1, self.backbone2 = backbone
+        self.projector1 = projection_MLP(backbone1.output_dim)
+        self.projector2 = projection_MLP(backbone2.output_dim)
+
+        self.encoder1 = nn.Sequential( # f encoder
+            self.backbone1,
+            self.projector1
+        )
+
+        self.encoder2 = nn.Sequential( # f encoder
+            self.backbone2,
+            self.projector2
+        )
+
+        self.predictor1 = prediction_MLP()
+        self.predictor2 = prediction_MLP()
+    
+    def forward(self, x1, x2):
+
+        f, f_h, g, g_h = self.encoder1, self.predictor1, self.encoder2, self.predictor2
+        z1, z2 = f(x1), g(x2)
+        p1, p2 = f_h(z1), g_h(z2)
+        L = D(p1, z2) / 2 + D(p2, z1) / 2
+        return {'loss': L}
+
 class SimSiamKD(nn.Module):
     def __init__(self, backbones):
         super().__init__()

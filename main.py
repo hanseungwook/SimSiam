@@ -74,8 +74,6 @@ def main(device, args):
     global_progress = tqdm(range(0, args.train.stop_at_epoch), desc=f'Training')
     for epoch in global_progress:
         model.train()
-        if 'kd' in args.model.name:
-            model.module.backbone_t.eval()
         
         local_progress=tqdm(train_loader, desc=f'Epoch {epoch}/{args.train.num_epochs}', disable=args.hide_progress)
         for idx, (images, labels) in enumerate(local_progress):
@@ -84,9 +82,6 @@ def main(device, args):
             # Standard case of two augmentations: x1, x2
             if len(images) == 2:
                 data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True))
-            # Anchor case with two augmentations + anchor: x1, x2, x (weak transformation applied)
-            elif len(images) == 3:
-                data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True), images[2].to(device, non_blocking=True))
 
             loss = data_dict['loss'].mean() # ddp
             loss.backward()
@@ -98,7 +93,7 @@ def main(device, args):
             logger.update_scalers(data_dict)
 
         if args.train.knn_monitor and epoch % args.train.knn_interval == 0:
-            backbone = model.module.backbone_s if (args.model.name == 'simsiam_kd' or args.model.name == 'simsiam_kd_anchor') else model.module.backbone
+            backbone = model.module.backbone1 if args.model.name == 'simsiam_nosg' else model.module.backbone
             accuracy = knn_monitor(backbone, memory_loader, test_loader, device, k=min(args.train.knn_k, len(memory_loader.dataset)), hide_progress=args.hide_progress) 
 
             # Save best model (evaluated by knn accuracy)
