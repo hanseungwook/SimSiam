@@ -1,3 +1,4 @@
+import torch
 import IPython
 
 def check_nan_inf(loss):
