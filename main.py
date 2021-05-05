@@ -52,7 +52,7 @@ def main(device, args):
     model = torch.nn.DataParallel(model)
 
     # define optimizer
-    optimizer = get_optimizer(
+    optimizer_f, optimizer_g = get_optimizer(
         args.train.optimizer.name, model, 
         lr=args.train.base_lr*args.train.batch_size/256, 
         momentum=args.train.optimizer.momentum,
@@ -84,13 +84,13 @@ def main(device, args):
 
             loss = data_dict['loss'].mean() # ddp
             loss.backward()
-            optimizer.step()
+            optimizer_f.step()
             
             model.zero_grad()
             data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True), g_to_f=True)
             loss = data_dict['loss'].mean() # ddp
             loss.backward()
-            optimizer.step()
+            optimizer_g.step()
 
             lr_scheduler.step()
             data_dict.update({'lr':lr_scheduler.get_lr()})
