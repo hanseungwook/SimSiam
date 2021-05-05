@@ -38,6 +38,8 @@ def main(args):
     if args.model.name == 'simsiam_kd':
         model, _ = get_backbone_kd(args.model.backbone)
         model_weight_kw = 'backbone_s.'
+    if args.model.name == 'simsiam_nosg':
+        model_weight_kw = 'backbone1.'
     else:
         model = get_backbone(args.model.backbone)
         
