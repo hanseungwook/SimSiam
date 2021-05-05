@@ -180,8 +180,8 @@ class SimSiamNoSG(nn.Module):
         z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu_norm, covariance_matrix=torch.diag_embed(z1_var))
         z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu_norm, covariance_matrix=torch.diag_embed(z2_var))
 
-        z1_kl = torch.distributions.kl.kl_divergence(z1_dist, z2_dist.detach())
-        z2_kl = torch.distributions.kl.kl_divergence(z2_dist, z1_dist.detach())
+        z1_kl = torch.distributions.kl.kl_divergence(z1_dist, z2_dist)
+        z2_kl = torch.distributions.kl.kl_divergence(z2_dist, z1_dist)
 
         loss_kl = z1_kl * 0.5 + z2_kl * 0.5
         
