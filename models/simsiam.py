@@ -154,16 +154,40 @@ class SimSiamNoSG(nn.Module):
             self.projector2
         )
 
-        self.predictor1 = prediction_MLP()
-        self.predictor2 = prediction_MLP()
+        self.predictor_mu1 = prediction_MLP(in_dim=projector1.out_dim, out_dim=128)
+        self.predictor_var1 = prediction_MLP(in_dim=projector1.out_dim, out_dim=128)
+
+        self.predictor_mu2 = prediction_MLP(in_dim=projector2.out_dim, out_dim=128)
+        self.predictor_var2 = prediction_MLP(in_dim=projector2.out_dim, out_dim=128)
     
     def forward(self, x1, x2):
 
-        f, f_h, g, g_h = self.encoder1, self.predictor1, self.encoder2, self.predictor2
+        f, f_mu, f_var, g, g_mu, g_var = self.encoder1, self.predictor_mu1, self.predictor_var1, self.encoder2, self.predictor_mu2, self.predictor_var2
         z1, z2 = f(x1), g(x2)
-        p1, p2 = f_h(z1), g_h(z2)
-        L = D(p1, z2) / 2 + D(p2, z1) / 2
-        return {'loss': L}
+
+        # Batch and output dimensionality
+        B, N = z1.shape
+        device = z1.device
+
+        z1_mu, z1_var = self.predictor_mu1(z1), torch.sigmoid(self.predictor_var1(z1))
+        z2_mu, z2_var = self.predictor_mu2(z2), torch.sigmoid(self.predictor_var2(z2))
+
+        # Batch-wise normalization
+        z1_mu_norm = (z1_mu - z1_mu.mean(0)) / z1_mu.std(0)
+        z2_mu_norm = (z2_mu - z2_mu.mean(0)) / z2_mu.std(0)
+
+        # Pytorch internal method of KL
+        z1_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z1_mu_norm, covariance_matrix=torch.diag(z1_var))
+        z2_dist = torch.distributions.multivariate_normal.MultivariateNormal(loc=z2_mu_norm, covariance_matrix=torch.diag(z2_var))
+
+        z1_kl = torch.distributions.kl.kl_divergence(z1_dist, z2_dist.detach())
+        z2_kl = torch.distributions.kl.kl_divergence(z2_dist, z1_dist.detach())
+
+        loss_kl = z1_kl * 0.5 + z2_kl * 0.5
+        
+        loss = loss_kl
+
+        return {'loss': loss, 'loss/kl': loss_kl}
 
 class SimSiamKD(nn.Module):
     def __init__(self, backbones):
