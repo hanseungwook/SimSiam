@@ -13,6 +13,8 @@ def D(p, z, version='simplified'): # negative cosine similarity
 
     elif version == 'simplified':# same thing, much faster. Scroll down, speed test in __main__
         return - F.cosine_similarity(p, z.detach(), dim=-1).mean()
+    elif version == 'symmetric':
+        return - F.cosine_similarity(p, z, dim=-1).mean()
     else:
         raise Exception
 
