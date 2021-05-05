@@ -87,7 +87,7 @@ def main(device, args):
             optimizer.step()
             
             model.zero_grad()
-            data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True), g_to_f=False)
+            data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True), g_to_f=True)
             loss = data_dict['loss'].mean() # ddp
             loss.backward()
             optimizer.step()
