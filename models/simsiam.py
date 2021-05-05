@@ -163,7 +163,7 @@ class SimSiamNoSG(nn.Module):
         z1, z2 = f(x1), g(x2)
 
         # Whether to step f to g or g to f
-        L = D(z1, z2) if g_to_f else D(z2, z1)
+        L = D(z2, z1) if g_to_f else D(z1, z2)
 
         # p1, p2 = f_h(z1), g_h(z2)
         # L = D(z1, z2) / 2 + D(z2, z1) / 2
