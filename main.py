@@ -80,12 +80,18 @@ def main(device, args):
 
             model.zero_grad()
             # Standard case of two augmentations: x1, x2
-            if len(images) == 2:
-                data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True))
+            data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True))
 
             loss = data_dict['loss'].mean() # ddp
             loss.backward()
             optimizer.step()
+            
+            model.zero_grad()
+            data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True), g_to_f=False)
+            loss = data_dict['loss'].mean() # ddp
+            loss.backward()
+            optimizer.step()
+
             lr_scheduler.step()
             data_dict.update({'lr':lr_scheduler.get_lr()})
             
