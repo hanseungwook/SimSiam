@@ -154,11 +154,11 @@ class SimSiamNoSG(nn.Module):
             self.projector2
         )
 
-        self.predictor_mu1 = prediction_MLP(in_dim=projector1.out_dim, out_dim=128)
-        self.predictor_var1 = prediction_MLP(in_dim=projector1.out_dim, out_dim=128)
+        self.predictor_mu1 = prediction_MLP(in_dim=self.projector1.out_dim, out_dim=128)
+        self.predictor_var1 = prediction_MLP(in_dim=self.projector1.out_dim, out_dim=128)
 
-        self.predictor_mu2 = prediction_MLP(in_dim=projector2.out_dim, out_dim=128)
-        self.predictor_var2 = prediction_MLP(in_dim=projector2.out_dim, out_dim=128)
+        self.predictor_mu2 = prediction_MLP(in_dim=self.projector2.out_dim, out_dim=128)
+        self.predictor_var2 = prediction_MLP(in_dim=self.projector2.out_dim, out_dim=128)
     
     def forward(self, x1, x2):
 
