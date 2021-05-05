@@ -96,6 +96,7 @@ If you find this repo helpful, please consider star so that I have the motivatio
 `adv-mmd`: Two-player formulation in which discriminator is replaced with a MMD estimator \
 `joint`: Discrimator and encoder are treated as an end-to-end model estimating the ratio of joint / marginal (with symmetric loss added at z-level) \
 `no-sg`: Exploring asymmetric architectures to replace SG in SimSiam
+`no-sg-pred`: `no-sg` branch without predictor
 `e2e-baseline`: End-to-end model only estimating the ratio (two versions, in which the two distributions are created at x and z-levels)
 
 
