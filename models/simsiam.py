@@ -154,15 +154,15 @@ class SimSiamNoSG(nn.Module):
             self.projector2
         )
 
-        self.predictor1 = prediction_MLP()
-        self.predictor2 = prediction_MLP()
+        # self.predictor1 = prediction_MLP()
+        # self.predictor2 = prediction_MLP()
     
     def forward(self, x1, x2):
 
         f, f_h, g, g_h = self.encoder1, self.predictor1, self.encoder2, self.predictor2
         z1, z2 = f(x1), g(x2)
-        p1, p2 = f_h(z1), g_h(z2)
-        L = D(p1, z2) / 2 + D(p2, z1) / 2
+        # p1, p2 = f_h(z1), g_h(z2)
+        L = D(z1, z2) / 2 + D(z2, z1) / 2
         return {'loss': L}
 
 class SimSiamKD(nn.Module):
