@@ -23,7 +23,7 @@ def l2_metric(p, z):
 
 
 class projection_MLP(nn.Module):
-    def __init__(self, in_dim, hidden_dim=2048, out_dim=2048):
+    def __init__(self, in_dim, hidden_dim=2048, out_dim=2048, no_bn_output=False):
         super().__init__()
         ''' page 3 baseline setting
         Projection MLP. The projection MLP (in f) has BN ap-
@@ -44,10 +44,17 @@ class projection_MLP(nn.Module):
             nn.BatchNorm1d(hidden_dim),
             nn.ReLU(inplace=True)
         )
-        self.layer3 = nn.Sequential(
-            nn.Linear(hidden_dim, out_dim),
-            nn.BatchNorm1d(hidden_dim)
-        )
+        
+        if not no_bn_output:
+            self.layer3 = nn.Sequential(
+                nn.Linear(hidden_dim, out_dim),
+                nn.BatchNorm1d(hidden_dim)
+            )
+        else:
+            self.layer3 = nn.Sequential(
+                nn.Linear(hidden_dim, out_dim)
+            )
+    
         self.num_layers = 3
     def set_layers(self, num_layers):
         self.num_layers = num_layers
@@ -141,8 +148,8 @@ class SimSiamNoSG(nn.Module):
         super().__init__()
         
         self.backbone1, self.backbone2 = backbone
-        self.projector1 = projection_MLP(self.backbone1.output_dim)
-        self.projector2 = projection_MLP(self.backbone2.output_dim)
+        self.projector1 = projection_MLP(self.backbone1.output_dim, no_bn_output=True)
+        self.projector2 = projection_MLP(self.backbone2.output_dim, no_bn_output=True)
 
         self.encoder1 = nn.Sequential( # f encoder
             self.backbone1,
@@ -163,10 +170,10 @@ class SimSiamNoSG(nn.Module):
         z1, z2 = f(x1), g(x2)
 
         # Whether to step f to g or g to f
-        L = D(z2, z1) if g_to_f else D(z1, z2)
+        # L = D(z2, z1) if g_to_f else D(z1, z2)
 
         # p1, p2 = f_h(z1), g_h(z2)
-        # L = D(z1, z2) / 2 + D(z2, z1) / 2
+        L = D(z1, z2) / 2 + D(z2, z1) / 2
 
         return {'loss': L}
 
