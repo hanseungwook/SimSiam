@@ -98,6 +98,7 @@ If you find this repo helpful, please consider star so that I have the motivatio
 `no-sg`: Exploring asymmetric architectures to replace SG in SimSiam
 `no-sg-predictor`: `no-sg` branch without predictor
 `no-sg-tf`: Testing symmetric transformed views on both legs (not 2 views)
+`no-sg-tf-pred`: Testing symmetric transformed views on both legs (not 2 views) with predictor
 `e2e-baseline`: End-to-end model only estimating the ratio (two versions, in which the two distributions are created at x and z-levels)
 
 
