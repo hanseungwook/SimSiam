@@ -148,8 +148,8 @@ class SimSiamNoSG(nn.Module):
         super().__init__()
         
         self.backbone1, self.backbone2 = backbone
-        self.projector1 = projection_MLP(self.backbone1.output_dim, no_bn_output=True)
-        self.projector2 = projection_MLP(self.backbone2.output_dim, no_bn_output=True)
+        self.projector1 = projection_MLP(self.backbone1.output_dim)
+        self.projector2 = projection_MLP(self.backbone2.output_dim)
 
         self.encoder1 = nn.Sequential( # f encoder
             self.backbone1,
@@ -168,13 +168,17 @@ class SimSiamNoSG(nn.Module):
 
         f, g = self.encoder1, self.encoder2
         z1_f, z1_g = f(x1), g(x1)
+        # p1_f,  = f_p(z1_f)
         z2_f, z2_g = f(x2), g(x2)
+        
+
+        
 
         # Whether to step f to g or g to f
         # L = D(z2, z1) if g_to_f else D(z1, z2)
 
         # p1, p2 = f_h(z1), g_h(z2)
-        L = D(z1_f, z1_g) / 2 + D(z2_f, z2_g) / 2
+        L = D(z1_f, z1_g) / 2 + D(z2_g, z2_f) / 2
 
         return {'loss': L}
 
