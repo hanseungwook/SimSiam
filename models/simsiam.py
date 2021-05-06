@@ -23,7 +23,7 @@ def l2_metric(p, z):
 
 
 class projection_MLP(nn.Module):
-    def __init__(self, in_dim, hidden_dim=2048, out_dim=2048):
+    def __init__(self, in_dim, hidden_dim=2048, out_dim=2048, no_output_bn=False):
         super().__init__()
         ''' page 3 baseline setting
         Projection MLP. The projection MLP (in f) has BN ap-
@@ -44,10 +44,16 @@ class projection_MLP(nn.Module):
             nn.BatchNorm1d(hidden_dim),
             nn.ReLU(inplace=True)
         )
-        self.layer3 = nn.Sequential(
-            nn.Linear(hidden_dim, out_dim),
-            nn.BatchNorm1d(hidden_dim)
-        )
+
+        if not no_output_bn:
+            self.layer3 = nn.Sequential(
+                nn.Linear(hidden_dim, out_dim),
+                nn.BatchNorm1d(hidden_dim)
+            )
+        else:
+            self.layer3 = nn.Sequential(
+                nn.Linear(hidden_dim, out_dim)
+            )
         self.num_layers = 3
     def set_layers(self, num_layers):
         self.num_layers = num_layers
