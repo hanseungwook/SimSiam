@@ -167,9 +167,10 @@ class SimSiamNoSG(nn.Module):
     def forward(self, x1, x2, g_to_f=False):
 
         f, g = self.encoder1, self.encoder2
-        z1_f, z1_g = f(x1), g(x1)
-        # p1_f,  = f_p(z1_f)
-        z2_f, z2_g = f(x2), g(x2)
+        f_p, g_p = self.predictor1, self.predictor2
+
+        z1_f, z1_g = f_p(f(x1)), g(x1)
+        z2_f, z2_g = f(x2), g_p(g(x2))
         
 
         
