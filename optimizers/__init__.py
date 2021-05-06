@@ -7,7 +7,7 @@ from .lr_scheduler import LR_Scheduler
 
 def get_optimizer(name, model, lr, momentum, weight_decay):
 
-    predictor_prefix = ('module.backbone1', 'module.projector1')
+    predictor_prefix = ('module.backbone1', 'module.projector1', 'module.predictor1')
     parameters_f = [{
         'name': 'encoder1',
         'params': [param for name, param in model.named_parameters() if name.startswith(predictor_prefix)],

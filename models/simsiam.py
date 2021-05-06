@@ -154,8 +154,8 @@ class SimSiamNoSG(nn.Module):
             self.projector2
         )
 
-        # self.predictor1 = prediction_MLP()
-        # self.predictor2 = prediction_MLP()
+        self.predictor1 = prediction_MLP()
+        self.predictor2 = prediction_MLP()
     
     def forward(self, x1, x2, g_to_f=False):
 
@@ -163,7 +163,7 @@ class SimSiamNoSG(nn.Module):
         z1, z2 = f(x1), g(x2)
 
         # Whether to step f to g or g to f
-        L = D(z2, z1) if g_to_f else D(z1, z2)
+        L = D(self.predictor1(z1), z2) if not g_to_f else D(self.predictor2(z2), z1) 
 
         # p1, p2 = f_h(z1), g_h(z2)
         # L = D(z1, z2) / 2 + D(z2, z1) / 2
