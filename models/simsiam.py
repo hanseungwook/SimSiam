@@ -161,8 +161,8 @@ class SimSiamNoSG(nn.Module):
             self.projector2
         )
 
-        # self.predictor1 = prediction_MLP()
-        # self.predictor2 = prediction_MLP()
+        self.predictor1 = prediction_MLP()
+        self.predictor2 = prediction_MLP()
     
     def forward(self, x1, x2, g_to_f=False):
 
