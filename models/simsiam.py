@@ -173,10 +173,10 @@ class SimSiamNoSG(nn.Module):
         p1_f, p1_g = f_p(z1_f), g_p(z1_g)
 
 
+        z2_f, z2_g = f(x2), g(x2)
+        p2_f, p2_g = f_p(z2_f), g_p(z2_g)        
 
-        # z2_f, z2_g = f(x2), g_p(g(x2))
-
-        L = D(p1_f, z1_g) / 2 + D(p1_g, z1_f) / 2
+        L = D(p1_f, z1_g) / 4 + D(p1_g, z1_f) / 4 + D(p2_f, z2_g) / 4 + D(p2_g, z2_f) / 4
 
         return {'loss': L}
 
