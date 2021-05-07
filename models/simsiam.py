@@ -169,17 +169,14 @@ class SimSiamNoSG(nn.Module):
         f, g = self.encoder1, self.encoder2
         f_p, g_p = self.predictor1, self.predictor2
 
-        z1_f, z1_g = f_p(f(x1)), g(x1)
-        z2_f, z2_g = f(x2), g_p(g(x2))
-        
+        z1_f, z1_g = f(x1), g(x1)
+        p1_f, p1_g = f_p(z1_f), g_p(z1_g)
 
-        
 
-        # Whether to step f to g or g to f
-        # L = D(z2, z1) if g_to_f else D(z1, z2)
 
-        # p1, p2 = f_h(z1), g_h(z2)
-        L = D(z1_f, z1_g) / 2 + D(z2_g, z2_f) / 2
+        # z2_f, z2_g = f(x2), g_p(g(x2))
+
+        L = D(p1_f, z1_g) / 2 + D(p1_g, z1_f) / 2
 
         return {'loss': L}
 
