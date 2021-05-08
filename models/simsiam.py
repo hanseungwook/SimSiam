@@ -140,7 +140,7 @@ class SimSiamNoSG(nn.Module):
     def __init__(self, backbone=[resnet50(), resnet50(), resnet50()]):
         super().__init__()
         
-        self.backbone1, self.backbone2 = backbone
+        self.backbone1, self.backbone2, self.backbone3 = backbone
         self.projector1 = projection_MLP(self.backbone1.output_dim)
         self.projector2 = projection_MLP(self.backbone2.output_dim)
         self.projector2 = projection_MLP(self.backbone3.output_dim)
