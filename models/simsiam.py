@@ -143,7 +143,7 @@ class SimSiamNoSG(nn.Module):
         self.backbone1, self.backbone2, self.backbone3 = backbone
         self.projector1 = projection_MLP(self.backbone1.output_dim)
         self.projector2 = projection_MLP(self.backbone2.output_dim)
-        self.projector2 = projection_MLP(self.backbone3.output_dim)
+        self.projector3 = projection_MLP(self.backbone3.output_dim)
 
         self.encoder1 = nn.Sequential( # f encoder
             self.backbone1,
