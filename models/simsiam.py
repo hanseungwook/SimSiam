@@ -137,12 +137,13 @@ class SimSiam(nn.Module):
         return {'loss': L}
 
 class SimSiamNoSG(nn.Module):
-    def __init__(self, backbone=[resnet50(), resnet50()]):
+    def __init__(self, backbone=[resnet50(), resnet50(), resnet50()]):
         super().__init__()
         
         self.backbone1, self.backbone2 = backbone
         self.projector1 = projection_MLP(self.backbone1.output_dim)
         self.projector2 = projection_MLP(self.backbone2.output_dim)
+        self.projector2 = projection_MLP(self.backbone3.output_dim)
 
         self.encoder1 = nn.Sequential( # f encoder
             self.backbone1,
@@ -154,16 +155,51 @@ class SimSiamNoSG(nn.Module):
             self.projector2
         )
 
+        self.encoder3 = nn.Sequential( # f encoder
+            self.backbone3,
+            self.projector3
+        )
+
         self.predictor1 = prediction_MLP()
         self.predictor2 = prediction_MLP()
+        self.predictor3 = prediction_MLP()
     
-    def forward(self, x1, x2):
+    def forward(self, x1, x2, x3):
+        # Select uniform sampling from 3 symmetric pairs
+        pair_idxs = np.random.randint(0, 3, size=(x1.shape[0]))
 
-        f, f_h, g, g_h = self.encoder1, self.predictor1, self.encoder2, self.predictor2
-        z1, z2 = f(x1), g(x2)
-        p1, p2 = f_h(z1), g_h(z2)
-        L = D(p1, z2) / 2 + D(p2, z1) / 2
-        return {'loss': L}
+        L = 0.0
+        # Iterating through all possible symmetric pairs
+        for pair_idx in range(3):
+            f, f_h, g, g_h, v1, v2 = self.get_pair_encoders(pair_idx)
+
+            # Selecting respective pairs of views/images from mini-batch that were assigned to this symmetric pair optimization
+            v1 = v1[np.where(pair_idxs == pair_idx)[0]]
+            v2 = v2[np.where(pair_idxs == pair_idx)[0]]
+            z1, z2 = f(v2), g(v2)
+            p1, p2 = f_h(z1), g_h(z2)
+            L += D(p1, z2) / 2 + D(p2, z1) / 2
+
+        return {'loss': L / 3.0}
+    
+    def get_pair_encoders_views(self, pair_idx, x1, x2, x3):
+        e1, e1_p, e2, e2_p = None, None, None, None
+        v1, v2 = None, None
+
+        if pair_idx == 0:
+            e1, e1_p, e2, e2_p = self.encoder1, self.predictor1, self.encoder2, self.predictor2
+            v1, v2 = x1, x2
+        elif pair_idx == 1:
+            e1, e1_p, e2, e2_p = self.encoder1, self.predictor1, self.encoder3, self.predictor3
+            v1, v2 = x1, x3
+        elif pair_idx == 2:
+            e1, e1_p, e2, e2_p = self.encoder2, self.predictor2, self.encoder3, self.predictor3
+            v1, v2 = x2, x3
+        else: 
+            raise NotImplementedError('Respective pair idx not implemented: {}'.format(pair_idx))
+
+        return e1, e1_p, e2, e2_p, v1, v2    
+        
 
 class SimSiamKD(nn.Module):
     def __init__(self, backbones):

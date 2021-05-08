@@ -17,8 +17,9 @@ def get_backbone(backbone, castrate=True):
 def get_backbone_nosg(backbone, castrate=True):
     backbone1 = get_backbone(backbone, castrate)
     backbone2 = get_backbone(backbone, castrate)
+    backbone3 = get_backbone(backbone, castrate)
 
-    return backbone1, backbone2
+    return backbone1, backbone2, backbone3
 
 def get_backbone_kd(backbone_s, backbone_t, num_classes=10, castrate=True):
     backbone_s = eval(f"{backbone_s}()")
@@ -46,6 +47,7 @@ def get_model(model_cfg):
         if model_cfg.proj_layers is not None:
             model.projector1.set_layers(model_cfg.proj_layers)
             model.projector2.set_layers(model_cfg.proj_layers)
+            model.projector3.set_layers(model_cfg.proj_layers)
     elif model_cfg.name == 'simsiam_kd':
         model =  SimSiamKD(get_backbone_kd(model_cfg.backbone_s, model_cfg.backbone_t, model_cfg.num_classes))
         if model_cfg.proj_layers is not None:

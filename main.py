@@ -82,6 +82,9 @@ def main(device, args):
             # Standard case of two augmentations: x1, x2
             if len(images) == 2:
                 data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True))
+            # 3 augmentations: x1, x2, x3
+            elif len(images) == 3:
+                data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True), images[2].to(device, non_blocking=True))
 
             loss = data_dict['loss'].mean() # ddp
             loss.backward()

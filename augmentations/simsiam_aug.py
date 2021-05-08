@@ -38,12 +38,9 @@ class SimSiamTransform():
     def __call__(self, x):
         x1 = self.transform(x)
         x2 = self.transform(x)
-
-        if not self.anchor:
-            return x1, x2
-        else:
-            x3 = self.transform_anchor(x)
-            return x1, x2, x3
+        x3 = self.transform(x)
+        
+        return x1, x2, x3
 
 
 def to_pil_image(pic, mode=None):
