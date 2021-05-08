@@ -168,7 +168,7 @@ class SimSiamNoSG(nn.Module):
         # Select uniform sampling from 3 symmetric pairs
         pair_idxs = torch.randint(0, 3, (x1.shape[0],))
 
-        L = 0.0
+        total_L = []
         # Iterating through all possible symmetric pairs
         for pair_idx in range(3):
             f, f_h, g, g_h, v1, v2 = self.get_pair_encoders_views(pair_idx, x1, x2, x3)
@@ -178,9 +178,11 @@ class SimSiamNoSG(nn.Module):
             v2 = v2[torch.where(pair_idxs == pair_idx)[0]]
             z1, z2 = f(v2), g(v2)
             p1, p2 = f_h(z1), g_h(z2)
-            L += D(p1, z2) / 2 + D(p2, z1) / 2
+            L = D(p1, z2) / 2 + D(p2, z1) / 2
+            L.backward()
+            total_L.append(L)
 
-        return {'loss': L / 3.0}
+        return {'loss': torch.sum(total_L) / len(total_L)}
     
     def get_pair_encoders_views(self, pair_idx, x1, x2, x3):
         e1, e1_p, e2, e2_p = None, None, None, None

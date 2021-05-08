@@ -87,7 +87,8 @@ def main(device, args):
                 data_dict = model.forward(images[0].to(device, non_blocking=True), images[1].to(device, non_blocking=True), images[2].to(device, non_blocking=True))
 
             loss = data_dict['loss'].mean() # ddp
-            loss.backward()
+            # Backward called in model
+            # loss.backward()
             optimizer.step()
             lr_scheduler.step()
             data_dict.update({'lr':lr_scheduler.get_lr()})
