@@ -171,7 +171,7 @@ class SimSiamNoSG(nn.Module):
         L = 0.0
         # Iterating through all possible symmetric pairs
         for pair_idx in range(3):
-            f, f_h, g, g_h, v1, v2 = self.get_pair_encoders_views(pair_idx)
+            f, f_h, g, g_h, v1, v2 = self.get_pair_encoders_views(pair_idx, x1, x2, x3)
 
             # Selecting respective pairs of views/images from mini-batch that were assigned to this symmetric pair optimization
             v1 = v1[torch.where(pair_idxs == pair_idx)[0]]
