@@ -166,7 +166,7 @@ class SimSiamNoSG(nn.Module):
     
     def forward(self, x1, x2, x3):
         # Select uniform sampling from 3 symmetric pairs
-        pair_idxs = np.random.randint(0, 3, size=(x1.shape[0]))
+        pair_idxs = torch.randint(0, 3, (x1.shape[0],))
 
         L = 0.0
         # Iterating through all possible symmetric pairs
@@ -174,8 +174,8 @@ class SimSiamNoSG(nn.Module):
             f, f_h, g, g_h, v1, v2 = self.get_pair_encoders(pair_idx)
 
             # Selecting respective pairs of views/images from mini-batch that were assigned to this symmetric pair optimization
-            v1 = v1[np.where(pair_idxs == pair_idx)[0]]
-            v2 = v2[np.where(pair_idxs == pair_idx)[0]]
+            v1 = v1[torch.where(pair_idxs == pair_idx)[0]]
+            v2 = v2[torch.where(pair_idxs == pair_idx)[0]]
             z1, z2 = f(v2), g(v2)
             p1, p2 = f_h(z1), g_h(z2)
             L += D(p1, z2) / 2 + D(p2, z1) / 2
