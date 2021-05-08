@@ -182,7 +182,7 @@ class SimSiamNoSG(nn.Module):
             L.backward()
             total_L.append(L)
 
-        return {'loss': torch.sum(total_L) / len(total_L)}
+        return {'loss': sum(total_L) / len(total_L)}
     
     def get_pair_encoders_views(self, pair_idx, x1, x2, x3):
         e1, e1_p, e2, e2_p = None, None, None, None
