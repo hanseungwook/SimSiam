@@ -133,9 +133,9 @@ class SimSiam(nn.Module):
         f, h = self.encoder, self.predictor
         z1, z2, z3 = f(x1), f(x2), f(x3)
         p1, p2, p3 = h(z1), h(z2), h(z3)
-        L = D(p1, z2) / 2 + D(p2, z1) / 2 #+ D(p1, z3) / 4 + D(p3, z1) / 4
+        L = D(p1, z2) / 4 + D(p2, z1) / 4 + D(p1, z3) / 4 + D(p3, z1) / 4
         L.backward()
-        
+
         return {'loss': L}
 
 class SimSiamNoSG(nn.Module):
