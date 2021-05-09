@@ -179,7 +179,7 @@ class SimSiamNoSG(nn.Module):
             z1, z2 = f(v1), g(v2)
             p1, p2 = f_h(z1), g_h(z2)
             L = D(p1, z2) / 2 + D(p2, z1) / 2
-            L.backward()
+            L.backward(retain_graph=True if pair_idx < 2 else False)
             total_L.append(L)
 
         return {'loss': sum(total_L) / len(total_L)}
