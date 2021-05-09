@@ -170,13 +170,13 @@ class SimSiamNoSG(nn.Module):
 
         total_L = []
         # Iterating through all possible symmetric pairs
-        for pair_idx in range(3):
+        for pair_idx in range(2):
             f, f_h, g, g_h, v1, v2 = self.get_pair_encoders_views(pair_idx, x1, x2, x3)
 
             # Selecting respective pairs of views/images from mini-batch that were assigned to this symmetric pair optimization
-            v1 = v1[torch.where(pair_idxs == pair_idx)[0]]
-            v2 = v2[torch.where(pair_idxs == pair_idx)[0]]
-            z1, z2 = f(v2), g(v2)
+            # v1 = v1[torch.where(pair_idxs == pair_idx)[0]]
+            # v2 = v2[torch.where(pair_idxs == pair_idx)[0]]
+            z1, z2 = f(v1), g(v2)
             p1, p2 = f_h(z1), g_h(z2)
             L = D(p1, z2) / 2 + D(p2, z1) / 2
             L.backward()
@@ -192,11 +192,12 @@ class SimSiamNoSG(nn.Module):
             e1, e1_p, e2, e2_p = self.encoder1, self.predictor1, self.encoder2, self.predictor2
             v1, v2 = x1, x2
         elif pair_idx == 1:
-            e1, e1_p, e2, e2_p = self.encoder1, self.predictor1, self.encoder3, self.predictor3
-            v1, v2 = x1, x3
-        elif pair_idx == 2:
             e1, e1_p, e2, e2_p = self.encoder2, self.predictor2, self.encoder3, self.predictor3
             v1, v2 = x2, x3
+        elif pair_idx == 2:
+            e1, e1_p, e2, e2_p = self.encoder1, self.predictor1, self.encoder3, self.predictor3
+            v1, v2 = x1, x3
+
         else: 
             raise NotImplementedError('Respective pair idx not implemented: {}'.format(pair_idx))
 
